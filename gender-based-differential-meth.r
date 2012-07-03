@@ -31,7 +31,7 @@ test.probes <- featureNames(eset.meth)[fData(eset.meth)$sd > 0.1]
 
 adj.exp <- list()
 for(t in levels(eset.meth$tissue)) {
-  adj.exp[[t]] <- lm_eset(~ age + pmi, eset = eset.meth[,eset.meth$tissue == t], 
+  adj.exp[[t]] <- lm_eset(~ age + tissuebank, eset = eset.meth[,eset.meth$tissue == t], 
   probesets = test.probes, use = "pairwise.complete", resid.only = TRUE)
 }
 
@@ -81,6 +81,8 @@ for(i in na.ts) {
 t.results$q.value <- unlist(
   with(t.results, tapply(p.value, tissue, p.adjust, method = "BH")))
 
+with(t.results, table(tissue[p.value < .05]))
+with(t.results, table(tissue[q.value < .1]))
 
 # Annotate t-test results -------------------------------------------------
 
