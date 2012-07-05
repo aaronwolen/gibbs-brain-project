@@ -24,12 +24,18 @@ fdata.exp <- subset(fdata.exp,
 fmeta.exp <- subset(fmeta.exp, label %in% names(fdata.exp))
 
 # Add my standard fdata columns (or rename if they already exist)
-# (symbol, chr, strand, position)
+# (symbol, chr, strand, position, description)
 exp.renames <- c("Symbol" = "symbol", "Chromosome" = "chr", 
-                 "Probe_Chr_Orientation" = "strand")
+  "Probe_Chr_Orientation" = "strand", "Definition" = "description")
 
 fdata.exp <- rename(fdata.exp, exp.renames)
 fmeta.exp$label[match(names(exp.renames), fmeta.exp$label)] <- exp.renames
+
+# Remove redundant text from fdata.exp description column
+fdata.exp$description <- gsub("^Homo sapiens ", "", fdata.exp$description)
+fdata.exp$description <- gsub(", mRNA\\.$", "", fdata.exp$description)
+fdata.exp$description <- apply(fdata.exp, 1, function(x) 
+  gsub(paste(" \\(", x["symbol"], "\\)", sep = ""), "", x["description"]))
 
 # Extract position from 'Probe_Coordinates'
 fdata.exp$position <- gsub("(\\d)-.*", "\\1", fdata.exp$Probe_Coordinates)
@@ -37,7 +43,7 @@ fmeta.exp <- rbind(fmeta.exp, data.frame(label = "position",
   labelDescription = "Chromosome probe position"))
 
 fdata.exp <- reorder_cols(fdata.exp, 
-  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5))
+  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6))
 fmeta.exp <- fmeta.exp[match(names(fdata.exp), fmeta.exp$label),]
 
 # Tidy column names by converting to lower case
@@ -77,13 +83,14 @@ fmeta.meth <- subset(fmeta.meth, label %in% names(fdata.meth))
 # Add my standard fdata columns (or rename if they already exist)
 # (symbol, chr, strand, position)
 meth.renames <- c("Symbol" = "symbol", "Chr" = "chr", 
-                 "RANGE_STRAND" = "strand", "MapInfo" = "position")
+                 "RANGE_STRAND" = "strand", "MapInfo" = "position", 
+                  "Product" = "description")
 
 fdata.meth <- rename(fdata.meth, meth.renames)
 fmeta.meth$label[match(names(meth.renames), fmeta.meth$label)] <- meth.renames
 
 fdata.meth <- reorder_cols(fdata.meth, 
-  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5))
+  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6))
 fmeta.meth <- fmeta.meth[match(names(fdata.meth), fmeta.meth$label),]
 
 # Tidy column names by converting to lower case
@@ -105,7 +112,7 @@ fmeta.micro <- fvarMetadata(geo.micro[[1]])
 
 # Change metadata to match recommended format
 fmeta.micro <- fmeta.micro[, c("Column", "Description")]
-fmeta.micro <- rename(fmeta.micro, 
+fmeta.micro <- rename(fmeta.micro,
   c("Column" = "label", "Description" = "labelDescription"))
 
 # Invariant columns
