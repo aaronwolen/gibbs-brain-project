@@ -65,8 +65,6 @@ eset.exp <- ExpressionSet(exp.mat,
   featureData = AnnotatedDataFrame(fdata.exp, varMetadata = fmeta.exp),
   experimentData = miame.exp)
 
-save(list = "eset.exp", file = "data/eset-exp.rda", compress = TRUE)
-
 
 
 # Methylation - construct eSet object -------------------------------------
@@ -84,8 +82,6 @@ eset.meth <- ExpressionSet(meth.mat,
   phenoData = AnnotatedDataFrame(pdata.meth), 
   featureData = AnnotatedDataFrame(fdata.meth, varMetadata = fmeta.meth),
   experimentData = miame.meth)
-
-save(list = "eset.meth", file = "data/eset-meth.rda", compress = TRUE)
 
 
 
@@ -105,4 +101,23 @@ eset.micro <- ExpressionSet(micro.mat,
   featureData = AnnotatedDataFrame(fdata.micro, varMetadata = fmeta.micro),
   ExperimentData = miame.micro)
 
+
+
+# Reorder eSet objects ----------------------------------------------------
+
+# Order all data-set samples by tissue and then individual id
+reorder_eset <- function(eset) {
+  tissues <- as.character(eset$tissue)
+  samples <- as.numeric(as.character(eset$individual))
+  return(eset[, order(tissues, samples)])
+}
+
+eset.exp <- reorder_eset(eset.exp)
+eset.meth <- reorder_eset(eset.meth)
+eset.micro <- reorder_eset(eset.micro)
+
+# Save eSet objects as compressed rda files -------------------------------
+
+save(list = "eset.exp", file = "data/eset-exp.rda", compress = TRUE)
+save(list = "eset.meth", file = "data/eset-meth.rda", compress = TRUE)
 save(list = "eset.micro", file = "data/eset-micro.rda", compress = TRUE)
