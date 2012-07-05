@@ -100,6 +100,8 @@ levels(pdata$individual) <- sort(as.numeric(levels(pdata$individual)))
 # Rownames of pdata must match colnames of expression matrix
 rownames(pdata) <- pdata$geo
 
+pdata <- arrange(pdata, assay, tissue, individual)
+
 write.csv(pdata, "data/cleaned-pdata.csv")
 
 
