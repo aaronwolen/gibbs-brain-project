@@ -155,8 +155,11 @@ fmeta.micro <- fmeta.micro[, c("Column", "Description")]
 fmeta.micro <- rename(fmeta.micro,
   c("Column" = "label", "Description" = "labelDescription"))
 
-# Invariant columns
-head(fdata.micro[,invariant_cols(fdata.micro)])
+# Remove nvariant columns (exclude aberrant first row)
+micro.invar <- invariant_cols(fdata.micro[-1, ])
+head(fdata.micro[, micro.invar])
+
+fdata.micro <- fdata.micro[, !names(fdata.micro) %in% micro.invar]
 
 # Redundant columns
 redundant_cols(fdata.micro)
