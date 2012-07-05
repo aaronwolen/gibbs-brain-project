@@ -97,10 +97,11 @@ pdata <- classify_columns(pdata,
 levels(pdata$gender) <- c("male", "female")
 levels(pdata$individual) <- sort(as.numeric(levels(pdata$individual)))
 
+# Reorder
+pdata <- arrange(pdata, assay, tissue, individual)
+
 # Rownames of pdata must match colnames of expression matrix
 rownames(pdata) <- pdata$geo
-
-pdata <- arrange(pdata, assay, tissue, individual)
 
 write.csv(pdata, "data/cleaned-pdata.csv")
 
