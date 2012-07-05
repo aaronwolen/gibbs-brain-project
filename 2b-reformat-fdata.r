@@ -1,35 +1,6 @@
 # Clean-up feature annotation data
 ###########################################################################
 
-
-# Function: classify_columns ----------------------------------------------
-
-#' @param df data.frame
-#' @param num.cols columns that should be of class numeric
-#' @param fac.cols columns that should be of class factor
-#'   
-#' The class of all columns not specified in num.cols or fac.cols will be set to
-#' character.
-
-classify_columns <- function(df, num.cols, fac.cols) {
-  stopifnot(class(df) == "data.frame")
-  
-  if(!missing(num.cols)) {
-    stopifnot(all(num.cols %in% names(df)))
-  }
-  
-  if(!missing(fac.cols)) {
-    stopifnot(all(fac.cols %in% names(df)))
-  }
-  
-  df[!names(df) %in% fac.cols] <- lapply(df[!names(df) %in% fac.cols], as.character)
-  df[num.cols] <- lapply(df[num.cols], as.numeric)
-  df[fac.cols] <- lapply(df[fac.cols], as.factor)
-  
-  return(df)
-}
-
-
 # Tidy expression fdata ---------------------------------------------------
 
 fdata.exp <- fData(geo.exp[[1]])
