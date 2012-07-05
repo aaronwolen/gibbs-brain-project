@@ -150,6 +150,10 @@ rownames(fmeta.meth) <- fmeta.meth$label
 fdata.micro <- defactor(fData(geo.micro[[1]]))
 fmeta.micro <- fvarMetadata(geo.micro[[1]])
 
+# First row of fdata appears to have been parsed incorrectly and as a result
+# there are many missing values. Replace these empty values with NA.
+fdata.micro[1, which(fdata.micro[1,] == "")] <- NA
+
 # Change metadata to match recommended format
 fmeta.micro <- fmeta.micro[, c("Column", "Description")]
 fmeta.micro <- rename(fmeta.micro,
