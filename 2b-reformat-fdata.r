@@ -64,6 +64,10 @@ fdata.exp$chr <- factor(fdata.exp$chr, levels = c(1:22, "X", "Y"))
 # Set rownames equal to probe IDs
 rownames(fdata.exp) <- fdata.exp$id
 
+# Replace underscores
+colnames(fdata.exp) <- gsub("_", "\\.", names(fdata.exp))
+fmeta.exp$label <- gsub("_", "\\.", fmeta.exp$label)
+
 # Rename metadata columns
 rownames(fmeta.exp) <- fmeta.exp$label
 
@@ -125,6 +129,10 @@ fdata.meth$chr <- factor(fdata.meth$chr, levels = c(1:22, "X", "Y"))
 
 # Set rownames equal to probe IDs
 rownames(fdata.meth) <- fdata.meth$id
+
+# Replace underscores
+colnames(fdata.meth) <- gsub("_", "\\.", names(fdata.meth))
+fmeta.meth$label <- gsub("_", "\\.", fmeta.meth$label)
 
 # Rename metadata columns
 rownames(fmeta.meth) <- fmeta.meth$label
@@ -229,6 +237,10 @@ rownames(fdata.micro) <- fdata.micro$id
 
 # Properly order chr factor
 fdata.micro$chr <- factor(fdata.micro$chr, levels = c(1:22, "X", "Y"))
+
+# Replace underscores
+colnames(fdata.micro) <- gsub("_", "\\.", names(fdata.micro))
+fmeta.micro$label <- gsub("_", "\\.", fmeta.micro$label)
 
 # Rename metadata columns
 rownames(fmeta.micro) <- fmeta.micro$label
