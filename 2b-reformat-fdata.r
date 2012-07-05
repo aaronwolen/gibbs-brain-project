@@ -61,6 +61,9 @@ fdata.exp <- classify_columns(fdata.exp,
 # Properly order chr factor
 fdata.exp$chr <- factor(fdata.exp$chr, levels = c(1:22, "X", "Y"))
 
+# Set rownames equal to probe IDs
+rownames(fdata.exp) <- fdata.exp$id
+
 # Rename metadata columns
 rownames(fmeta.exp) <- fmeta.exp$label
 
@@ -119,6 +122,9 @@ fdata.meth <- classify_columns(fdata.meth,
 
 # Properly order chr factor
 fdata.meth$chr <- factor(fdata.meth$chr, levels = c(1:22, "X", "Y"))
+
+# Set rownames equal to probe IDs
+rownames(fdata.meth) <- fdata.meth$id
 
 # Rename metadata columns
 rownames(fmeta.meth) <- fmeta.meth$label
@@ -217,6 +223,9 @@ fdata.micro <- classify_columns(fdata.micro,
   num.cols = c("position", "numtargets", "targetmatureversion", 
                "array_address_id"),
   fac.cols = c("chr", "strand"))
+
+# Set rownames equal to probe IDs
+rownames(fdata.micro) <- fdata.micro$id
 
 # Properly order chr factor
 fdata.micro$chr <- factor(fdata.micro$chr, levels = c(1:22, "X", "Y"))
