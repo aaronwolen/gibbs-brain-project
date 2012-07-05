@@ -4,7 +4,7 @@ In their [PLoS Genetics paper](http://www.plosgenetics.org/article/info:doi/10.1
 
 ## Data-sets
 
-The expression and methylation datasets are both available from GEO, which also includes microRNA data from the same subjects.
+The expression and methylation datasets are both available from the publication's GEO repository, which also includes microRNA data from the same subjects.
 
 GEO: [GSE15745](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE15745)
 
