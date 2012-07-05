@@ -27,7 +27,8 @@ fmeta.exp <- subset(fmeta.exp, label %in% names(fdata.exp))
 # (symbol, chr, strand, position, description)
 exp.renames <- c("Symbol" = "symbol", "Chromosome" = "chr", 
   "Probe_Chr_Orientation" = "strand", "Definition" = "description",
-  "Entrez_Gene_ID" = "entrez", "GI" = "gene.info")
+  "Entrez_Gene_ID" = "entrez", "GI" = "gene.info",
+  "RefSeq_ID" = "refseq", "Array_Address_Id" = "array_address")
 
 fdata.exp <- rename(fdata.exp, exp.renames)
 fmeta.exp$label[match(names(exp.renames), fmeta.exp$label)] <- exp.renames
@@ -55,7 +56,7 @@ fmeta.exp$label <- tolower(fmeta.exp$label)
 
 # Properly classify columns
 fdata.exp <- classify_columns(fdata.exp, 
-  num.cols = c("position", "array_address_id", "probe_start"),
+  num.cols = c("position", "array_address", "probe_start"),
   fac.cols = c("chr", "strand", "probe_type"))
 
 # Properly order chr factor
@@ -99,7 +100,8 @@ fmeta.meth <- subset(fmeta.meth, label %in% names(fdata.meth))
 meth.renames <- c("Symbol" = "symbol", "Chr" = "chr", 
                  "RANGE_STRAND" = "strand", "MapInfo" = "position", 
                   "Product" = "description",
-                  "Gene_ID" = "entrez", "GID" = "gene.info")
+                  "Gene_ID" = "entrez", "GID" = "gene.info",
+                  "AddressA_ID" = "address.a", "AddressB_ID" = "address.b")
 
 fdata.meth <- rename(fdata.meth, meth.renames)
 fmeta.meth$label[match(names(meth.renames), fmeta.meth$label)] <- meth.renames
@@ -120,7 +122,7 @@ fmeta.meth$label <- tolower(fmeta.meth$label)
 
 # Properly classify columns
 fdata.meth <- classify_columns(fdata.meth, 
-  num.cols = c("position", "addressa_id", "addressb_id", "tss_coordinate",
+  num.cols = c("position", "address.a", "address.b", "tss_coordinate",
                "range_start",  "range_end", "orf"),
   fac.cols = c("chr", "strand", "ilmnstrand", "sourcestrand", "color_channel"))
 
@@ -168,7 +170,7 @@ fmeta.micro <- subset(fmeta.micro, label %in% names(fdata.micro))
 
 # Add my standard fdata columns (or rename if they already exist)
 # (symbol, chr, strand, position)
-micro.renames <- c("ILMN_Gene" = "symbol")
+micro.renames <- c("ILMN_Gene" = "symbol", "Array_Address_Id" = "array_address")
 
 fdata.micro <- rename(fdata.micro, micro.renames)
 fmeta.micro$label[match(names(micro.renames), fmeta.micro$label)] <- micro.renames
@@ -229,7 +231,7 @@ fmeta.micro$label <- tolower(fmeta.micro$label)
 # Properly classify columns
 fdata.micro <- classify_columns(fdata.micro, 
   num.cols = c("position", "numtargets", "targetmatureversion", 
-               "array_address_id"),
+               "array_address"),
   fac.cols = c("chr", "strand"))
 
 # Set rownames equal to probe IDs
