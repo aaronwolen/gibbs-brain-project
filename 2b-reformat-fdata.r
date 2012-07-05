@@ -232,7 +232,7 @@ fmeta.micro$label <- tolower(fmeta.micro$label)
 # Properly classify columns
 fdata.micro <- classify_columns(fdata.micro, 
   num.cols = c("position", "numtargets", "targetmatureversion", 
-               "array_address_id", "probe_matchorder"),
+               "array_address_id"),
   fac.cols = c("chr", "strand"))
 
 # Properly order chr factor
