@@ -55,7 +55,8 @@ fmeta.exp <- subset(fmeta.exp, label %in% names(fdata.exp))
 # Add my standard fdata columns (or rename if they already exist)
 # (symbol, chr, strand, position, description)
 exp.renames <- c("Symbol" = "symbol", "Chromosome" = "chr", 
-  "Probe_Chr_Orientation" = "strand", "Definition" = "description")
+  "Probe_Chr_Orientation" = "strand", "Definition" = "description",
+  "Entrez_Gene_ID" = "entrez", "GI" = "gene.info")
 
 fdata.exp <- rename(fdata.exp, exp.renames)
 fmeta.exp$label[match(names(exp.renames), fmeta.exp$label)] <- exp.renames
@@ -73,7 +74,8 @@ fmeta.exp <- rbind(fmeta.exp, data.frame(label = "position",
 
 # Reorder standard fdata columns
 fdata.exp <- reorder_cols(fdata.exp, 
-  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6))
+  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6,
+    "entrez" = 7, "gene.info" = 8))
 fmeta.exp <- fmeta.exp[match(names(fdata.exp), fmeta.exp$label),]
 
 # Tidy column names by converting to lower case
@@ -82,7 +84,7 @@ fmeta.exp$label <- tolower(fmeta.exp$label)
 
 # Properly classify columns
 fdata.exp <- classify_columns(fdata.exp, 
-  num.cols = c("position", "gi", "array_address_id", "probe_start"),
+  num.cols = c("position", "array_address_id", "probe_start"),
   fac.cols = c("chr", "strand", "probe_type"))
 
 # Properly order chr factor
@@ -118,14 +120,20 @@ fmeta.meth <- subset(fmeta.meth, label %in% names(fdata.meth))
 # (symbol, chr, strand, position)
 meth.renames <- c("Symbol" = "symbol", "Chr" = "chr", 
                  "RANGE_STRAND" = "strand", "MapInfo" = "position", 
-                  "Product" = "description")
+                  "Product" = "description",
+                  "Gene_ID" = "entrez", "GID" = "gene.info")
 
 fdata.meth <- rename(fdata.meth, meth.renames)
 fmeta.meth$label[match(names(meth.renames), fmeta.meth$label)] <- meth.renames
 
+# Remove redundant text from entrez and gene.info
+fdata.meth$entrez <- sub("GeneID:", "", fdata.meth$entrez)
+fdata.meth$gene.info <- sub("GI:", "", fdata.meth$gene.info)
+
 # Reorder standard fdata columns
 fdata.meth <- reorder_cols(fdata.meth, 
-  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6))
+  c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6,
+    "entrez" = 7, "gene.info" = 8))
 fmeta.meth <- fmeta.meth[match(names(fdata.meth), fmeta.meth$label),]
 
 # Tidy column names by converting to lower case
