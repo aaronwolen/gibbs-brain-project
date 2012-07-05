@@ -89,15 +89,16 @@ if(any(!colnames(pdata) %in% order.cols)) {
 pdata <- pdata[, order.cols]
 
 
-# Properly order factors --------------------------------------------------
+# Properly set column classes ---------------------------------------------
+pdata <- classify_columns(pdata, 
+  num.cols = c("age", "pmi"), 
+  fac.cols = c("gender", "individual"))
+
+levels(pdata$gender) <- c("male", "female")
+levels(pdata$individual) <- sort(as.numeric(levels(pdata$individual)))
 
 # Rownames of pdata must match colnames of expression matrix
 rownames(pdata) <- pdata$geo
-
-pdata$gender <- factor(pdata$gender, levels = c("male", "female"))
-pdata$age <- as.numeric(pdata$age)
-pdata$pmi <- as.numeric(pdata$pmi)
-pdata$tissue <- factor(pdata$tissue, levels = c("CRBLM", "FCTX", "PONS", "TCTX"))
 
 write.csv(pdata, "data/cleaned-pdata.csv")
 
