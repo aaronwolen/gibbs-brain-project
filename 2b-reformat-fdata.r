@@ -1,4 +1,33 @@
-# Clean-up feature annotation data 
+# Clean-up feature annotation data
+###########################################################################
+
+
+# Function: classify_columns ----------------------------------------------
+
+#' @param df data.frame
+#' @param num.cols columns that should be of class numeric
+#' @param fac.cols columns that should be of class factor
+#'   
+#' The class of all columns not specified in num.cols or fac.cols will be set to
+#' character.
+
+classify_columns <- function(df, num.cols, fac.cols) {
+  stopifnot(class(df) == "data.frame")
+  
+  if(!missing(num.cols)) {
+    stopifnot(all(num.cols %in% names(df)))
+  }
+  
+  if(!missing(fac.cols)) {
+    stopifnot(all(fac.cols %in% names(df)))
+  }
+  
+  df[!names(df) %in% fac.cols] <- lapply(df[!names(df) %in% fac.cols], as.character)
+  df[num.cols] <- lapply(df[num.cols], as.numeric)
+  df[fac.cols] <- lapply(df[fac.cols], as.factor)
+  
+  return(df)
+}
 
 
 # Tidy expression fdata ---------------------------------------------------
@@ -42,6 +71,7 @@ fdata.exp$position <- gsub("(\\d)-.*", "\\1", fdata.exp$Probe_Coordinates)
 fmeta.exp <- rbind(fmeta.exp, data.frame(label = "position", 
   labelDescription = "Chromosome probe position"))
 
+# Reorder standard fdata columns
 fdata.exp <- reorder_cols(fdata.exp, 
   c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6))
 fmeta.exp <- fmeta.exp[match(names(fdata.exp), fmeta.exp$label),]
@@ -51,8 +81,12 @@ names(fdata.exp) <- tolower(names(fdata.exp))
 fmeta.exp$label <- tolower(fmeta.exp$label)
 
 # Properly classify columns
+fdata.exp <- classify_columns(fdata.exp, 
+  num.cols = c("position", "gi", "array_address_id", "probe_start"),
+  fac.cols = c("chr", "strand", "probe_type"))
+
+# Properly order chr factor
 fdata.exp$chr <- factor(fdata.exp$chr, levels = c(1:22, "X", "Y"))
-fdata.exp$position <- as.numeric(as.character(fdata.exp$position))
 
 # Rename metadata columns
 rownames(fmeta.exp) <- fmeta.exp$label
@@ -89,6 +123,7 @@ meth.renames <- c("Symbol" = "symbol", "Chr" = "chr",
 fdata.meth <- rename(fdata.meth, meth.renames)
 fmeta.meth$label[match(names(meth.renames), fmeta.meth$label)] <- meth.renames
 
+# Reorder standard fdata columns
 fdata.meth <- reorder_cols(fdata.meth, 
   c("symbol" = 2, "chr" = 3, "position" = 4, "strand" = 5, "description" = 6))
 fmeta.meth <- fmeta.meth[match(names(fdata.meth), fmeta.meth$label),]
@@ -98,8 +133,13 @@ names(fdata.meth) <- tolower(names(fdata.meth))
 fmeta.meth$label <- tolower(fmeta.meth$label)
 
 # Properly classify columns
+fdata.meth <- classify_columns(fdata.meth, 
+  num.cols = c("position", "addressa_id", "addressb_id", "tss_coordinate",
+               "range_start",  "range_end", "orf"),
+  fac.cols = c("chr", "strand", "ilmnstrand", "sourcestrand", "color_channel"))
+
+# Properly order chr factor
 fdata.meth$chr <- factor(fdata.meth$chr, levels = c(1:22, "X", "Y"))
-fdata.meth$position <- as.numeric(as.character(fdata.meth$position))
 
 # Rename metadata columns
 rownames(fmeta.meth) <- fmeta.meth$label
@@ -187,8 +227,13 @@ names(fdata.micro) <- tolower(names(fdata.micro))
 fmeta.micro$label <- tolower(fmeta.micro$label)
 
 # Properly classify columns
+fdata.micro <- classify_columns(fdata.micro, 
+  num.cols = c("position", "numtargets", "targetmatureversion", 
+               "array_address_id", "probe_matchorder"),
+  fac.cols = c("chr", "strand"))
+
+# Properly order chr factor
 fdata.micro$chr <- factor(fdata.micro$chr, levels = c(1:22, "X", "Y"))
-fdata.micro$position <- as.numeric(as.character(fdata.micro$position))
 
 # Rename metadata columns
 rownames(fmeta.micro) <- fmeta.micro$label
