@@ -1,7 +1,3 @@
-# grab my dataframetools gist (function requires devtools package)
-devtools:::source_gist("https://raw.github.com/gist/540b67c86c3c81220462/785b87f8817cff500cd9d5be1c51a082db1cc842/dataframetools.r")
-
-
 #' Clean-up annoying format of phenoData characteristic columns
 #' 
 #' The provided phenoData contains several columns with useful phenotypic
