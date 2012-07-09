@@ -1,5 +1,5 @@
-# plotmatrix function that accepts a data.frame with additional variables for
-# aes mapping
+# Modified version of the ggplot2 plotmatrix function that accepts a data.frame
+# with additional variables for aesthetic mapping.
 
 plot_matrix <- function (data, facet.vars, mapping = aes(), 
   size = 1, alpha = 1, density = FALSE, bins = 30) {
@@ -55,8 +55,9 @@ plot_matrix <- function (data, facet.vars, mapping = aes(),
     }
   }
     
-  p + stat_density(data = densities, 
+  p <- p + stat_density(data = densities, 
       aes(x = x, y = ..scaled.. * diff(range(x)) + min(x)), 
-      position = "identity", colour = "grey20", geom = "line") +
-    opts(axis.title.x = theme_blank(), axis.title.y = theme_blank())
+      position = "identity", colour = "grey20", geom = "line")
+  
+  return(p)
 }
