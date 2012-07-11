@@ -109,3 +109,25 @@ sig.dm.cors <- cor(subset(t.dm, id %in% sig.probes)[, tissues])
 sig.dm.cors - dm.cors
 ```
 
+### What's up with cg15915418?
+
+As shown in the table below, cg15915418's differential methylation results clearly make it an outlier, especially when compared to the range of p-values for all other probes (voclano plot, above).
+```{r results-cg15915418, results='asis'}
+print_xtable(subset(t.results, id == "cg15915418"), col.names = TRUE)
+```
+
+The following barplot verifies there is indeed a huge and consistent difference in cg1591541 methylation betweengenders, with females showing almost complete repression in all four tissues. As this pattern is characteristic of probes targeting the sex chromosomes, I looked into the possibility that cg15915418 is mis-annotated.  
+```{r barplot-cg15915418, fig.width = 7.5}
+source("functions/plot_probe.r")
+
+probe_barplot(eset.meth, probe = "cg15915418", fill = "gender", 
+              facet.row = "tissue", base.size = 8)
+
+save_plot("meth-gender-barplot-cg15915418.pdf", width = 7.5, height = 4, 
+  path = fig.dir)
+```
+
+Blating cg15915418's `sourceseq` against version hg19 of the human regnome revealed a strong match on the X chromosome ([full results](http://genome.ucsc.edu/cgi-bin/hgc?o=64627510&g=htcUserAli&i=../trash/hgSs/hgSs_genome_47ba_dabb20.pslx+..%2Ftrash%2FhgSs%2FhgSs_genome_47ba_dabb20.fa+YourSeq&c=chrX&l=64627510&r=64627560&db=hg19&hgsid=284541277)), in addition to its purported Chr 9 target. As such, it's likely cg15915418 is actually measuring X chromosome methylation and should be re-annotated. 
+
+The barplot above also reveals a potential sample mix-up as individual 1886's methylation levels are on par with other males in cerebellum only. Genereating this plot for a random sample of other X chr probes showing sex-specific methylation patterns also suggested the sample labeled as 1886 cerebellum comes from a male. 
+
