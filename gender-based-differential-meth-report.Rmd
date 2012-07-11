@@ -8,6 +8,8 @@ report.title <- "gender-based-meth-differences"
 fig.dir <- file.path("figures", report.title)
 fig.prefix <- "meth-gender-"
 
+dir.create(fig.dir, showWarnings = FALSE)
+
 opts_knit$set(upload.fun = function(file, 
   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
 
@@ -15,6 +17,8 @@ opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
   cache=FALSE, fig.width=5, fig.height=4, dpi=150)
+
+
 ```
 
 ```{r load-libraries}
@@ -23,12 +27,8 @@ library(reshape2)
 library(ggplot2)
 
 source("functions/plot_matrix.r")
+source("functions/heat_matrix.r")
 source("functions/print_xtable.r")
-```
-
-```{r figure-variables}
-dir.create(fig.dir, showWarnings = FALSE)
-
 source("functions/save-figures.r")
 ```
 
@@ -47,7 +47,7 @@ Explore and visualize results from the gender-based differential methylation ana
 ## Methods
 The analysis was restricted to only autosomal probes. Low-variance probes were filtered out by removing any probes with an experiment-wide standard deviation < 0.1. 
 
-Methylation levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in subsequent analyses. These models were fit individually for each brain region so the residuals produced would be approximately normal within each region. 
+Methylation levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in subsequent analyses. These models were fit independently for each brain region so the residuals produced would be approximately normal within each region. 
 
 The t.test was carried out using the `rowttests` from the `genefilter` package. Since `rowttests` is unable to handle missing data, any probes with NA values had to be tested individually after removing offending samples.
 
@@ -90,6 +90,22 @@ t.dm <- dcast(t.results, id ~ tissue, value.var = "dm")
 plot_matrix(data = subset(t.dm, id != "cg15915418"), 
   facet.vars = tissues, alpha = 0.5, size = 0.75) + 
   stat_smooth(method = "lm") + 
-  xlab("Mean gender difference")  + ylab("Mean gender difference")              
+  xlab("Mean gender difference")  + ylab("Mean gender difference")
+```
+
+### Mean difference correlations across tissues
+
+As seen in the pairs plot above, gender-based methylation differences do correlate across tissues to some extent. The following heatmap depicts the inter-tissue correlations, which were strongest between PONS/FCTX and TCTX/FCTX. Re-calculating these correlations using only probes with t-test p-values < 0.05 increased these correlations by 0.15 - 0.22. 
+
+```{r dm-tissue-correlations, fig.width=3.5, fig.height=2.5}
+
+dm.cors <- cor(t.dm[, tissues])
+heat_matrix(dm.cors, symmetric = TRUE, legend.title = "cor", font.size = 3)
+
+# Limit correlations to probes with larger gender differences
+sig.probes <- unique(subset(t.results, p.value < 0.05)$id)
+sig.dm.cors <- cor(subset(t.dm, id %in% sig.probes)[, tissues])
+
+sig.dm.cors - dm.cors
 ```
 
