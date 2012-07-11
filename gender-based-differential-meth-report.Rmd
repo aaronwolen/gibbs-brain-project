@@ -113,7 +113,8 @@ sig.dm.cors - dm.cors
 
 As shown in the table below, cg15915418's differential methylation results clearly make it an outlier, especially when compared to the range of p-values for all other probes (voclano plot, above).
 ```{r results-cg15915418, results='asis'}
-print_xtable(subset(t.results, id == "cg15915418"), col.names = TRUE)
+print_xtable(subset(t.results, id == "cg15915418"), col.names = TRUE,
+  display = c("p.value" = "e", "q.value" = "e"))
 ```
 
 The following barplot verifies there is indeed a huge and consistent difference in cg1591541 methylation betweengenders, with females showing almost complete repression in all four tissues. As this pattern is characteristic of probes targeting the sex chromosomes, I looked into the possibility that cg15915418 is mis-annotated.  
@@ -131,4 +132,22 @@ Blating cg15915418's `sourceseq` against version hg19 of the human regnome revea
 
 The barplot above also reveals a potential sample mix-up as individual 1886's methylation levels are on par with other males in cerebellum only. Genereating this plot for a random sample of other X chr probes showing sex-specific methylation patterns also suggested the sample labeled as 1886 cerebellum comes from a male. 
 
+```{r examine-sig-probes, eval=FALSE}
+sig.results <- subset(t.results, q.value < .1 & id != "cg15915418")
+sig.results <- arrange(sig.results, q.value)
 
+top.probes <- unique(sig.results$id)[1:20]
+
+pdf(file.path(fig.dir, paste(fig.prefix, "top-probes-barplot.pdf", sep = ""), 
+  width = 10, height = 6)
+for(p in top.probes) {
+  plot(probe_barplot(eset.meth, probe = p, fill = "gender", base.size = 8))
+}
+dev.off()
+
+pdf("figures/meth_gender-diffs_top-probes-dotplot.pdf", width = 10, height = 6)
+for(p in top.probes) {
+  plot(probe_dotplot(eset.meth, probe = p, color = "age", base.size = 12))
+}
+dev.off()
+```
