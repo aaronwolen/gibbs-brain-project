@@ -92,7 +92,7 @@ pdata <- pdata[, order.cols]
 # Properly set column classes ---------------------------------------------
 pdata <- classify_columns(pdata, 
   num.cols = c("age", "pmi"), 
-  fac.cols = c("gender", "individual"))
+  fac.cols = c("tissue", "gender", "individual", "tissuebank", "batch"))
 
 levels(pdata$gender) <- c("male", "female")
 levels(pdata$individual) <- sort(as.numeric(levels(pdata$individual)))
