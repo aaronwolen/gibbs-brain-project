@@ -9,6 +9,7 @@ library(Biobase)
 library(foreach)
 library(doMC)
 
+source("functions/lm_eset.r")
 
 # Read in command line arguments ------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
@@ -37,15 +38,15 @@ source("4b-load-meth-data.r")
 # Subset ExpressionSets ---------------------------------------------------
 
 # Identify individuals present in both datasets
-common.ids <- intersect(eset.exp[, eset.exp$tissue == region]$individual,
-  eset.meth[, eset.meth$tissue == region]$individual)
+common.ids <- intersect(eset.exp[, eset.exp$tissue == tissue]$individual,
+  eset.meth[, eset.meth$tissue == tissue]$individual)
 
 # Region-specific eSet objects
 exp.sub <- eset.exp[, eset.exp$individual %in% common.ids & 
-                      eset.exp$tissue == region]
+                      eset.exp$tissue == tissue]
 
 meth.sub <- eset.meth[, eset.meth$individual %in% common.ids &
-                      eset.meth$tissue == region]
+                      eset.meth$tissue == tissue]
 
 # Swap geo ids for individual ids
 sampleNames(exp.sub) <- exp.sub$individual
@@ -58,7 +59,7 @@ stopifnot(sampleNames(exp.sub) == sampleNames(meth.sub))
 
 # Extract expression matrices ---------------------------------------------
 
-exp.mat <- exprs(exp.sub)
+exp.mat <- exprs(exp.sub) # Why is this here?
 meth.mat <- exprs(meth.sub)
 
 # Remove probes with NA values
@@ -73,15 +74,21 @@ if(!"na.count" %in% names(fData(meth.sub))) {
 # Identify meth and exp probes with common targets 
 genes <- intersect(fData(exp.sub)$symbol, fData(meth.sub)$symbol)
 
+# Identify probes corresponding to the common targets
+meth.probes <- subset(fData(meth.sub), symbol %in% genes)$id
+exp.probes <- subset(fData(exp.sub), symbol %in% genes)$id
 
 # Correct expression for technical variables ------------------------------
 
-exp.lm <- lm(t(exp.mat) ~ exp.sub$gender + exp.sub$age + exp.sub$tissuebank)
-meth.lm <- lm(t(meth.mat) ~ meth.sub$gender + meth.sub$age + meth.sub$tissuebank)
+# Setting lm_eset's use argument = "pairwise.complete" causes it to loop through
+# probes so missing values are be handled on a case by case basis. The result
+# is a matrix of residuals.
 
-exp.mat <- exp.lm$residuals
-meth.mat <- meth.lm$residuals
-
+meth.mat <- lm_eset(~ age + tissuebank, eset = meth.sub, 
+  probesets = meth.probes, use = "pairwise.complete", resid.only = TRUE)
+  
+exp.mat <- lm_eset(~ age + tissuebank, eset = exp.sub, 
+  probesets = exp.probes, use = "pairwise.complete", resid.only = TRUE)
 
 # Correlate expression/methylation residuals ------------------------------
 
