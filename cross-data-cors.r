@@ -30,8 +30,8 @@ registerDoMC(n.cores)
 
 
 # Load data ---------------------------------------------------------------
-source("4a-load-meth-data.r")
-source("4b-load-exp-data.r")
+source("4a-load-exp-data.r")
+source("4b-load-meth-data.r")
 
 
 # Subset ExpressionSets ---------------------------------------------------
