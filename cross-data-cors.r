@@ -59,7 +59,7 @@ stopifnot(sampleNames(exp.sub) == sampleNames(meth.sub))
 
 # Extract expression matrices ---------------------------------------------
 
-exp.mat <- exprs(exp.sub) # Why is this here?
+exp.mat <- exprs(exp.sub)
 meth.mat <- exprs(meth.sub)
 
 # Remove probes with NA values
@@ -112,5 +112,5 @@ names(cors.df) <- c("symbol", "meth", "exp", "r")
 cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, length(common.ids))
 
 write.csv(cors.df, file = file.path("results",
-  paste("meth-exp-correlations-nonnormalized-", tolower(region), ".csv", sep = "")),
+  paste("crossdata-meth-exp-correlations-", tolower(region), ".csv", sep = "")),
   row.names = FALSE)
