@@ -72,7 +72,7 @@ meth.probes <- subset(fData(meth.sub), symbol %in% genes)$id
 exp.probes <- subset(fData(exp.sub), symbol %in% genes)$id
 
 cat("Identified", length(meth.probes), "methylation probes and ", length(exp.probes),
-    "corresponding to the", length(genes), "present in both datasets.")
+    "corresponding to the", length(genes), "present in both datasets.\n")
 
 # Correct expression for technical variables ------------------------------
 
