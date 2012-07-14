@@ -64,15 +64,6 @@ stopifnot(sampleNames(exp.sub) == sampleNames(meth.sub))
 exp.mat <- exprs(exp.sub)
 meth.mat <- exprs(meth.sub)
 
-# Remove probes with NA values
-# if(!"na.count" %in% names(fData(meth.sub))) {
-#   na.filter <- apply(exprs(meth.sub), 1, function(x) sum(is.na(x))) == 0
-#   cat("Removed", sum(!na.filter), "methylation probes with NA values.\n")
-#   
-#   meth.mat <- meth.mat[na.filter,]
-#   meth.sub <- meth.sub[na.filter,]
-# }
-
 # Identify meth and exp probes with common targets 
 genes <- intersect(fData(exp.sub)$symbol, fData(meth.sub)$symbol)
 
@@ -104,7 +95,7 @@ cors.df <- foreach(g = genes, .combine = "rbind") %dopar% {
   ep <- rownames(fData(exp.sub)[fData(exp.sub)$symbol == g,])
   mp <- rownames(fData(meth.sub)[fData(meth.sub)$symbol == g,])
   
-  out <- cor(meth.mat[, mp], exp.mat[, ep])
+  out <- cor(meth.mat[, mp], exp.mat[, ep], use = "pairwise.complete")
   
   if(length(mp) == 1 | length(ep) == 1) {
     out <- data.frame(Var1 = mp, Var2 = ep, Freq = as.numeric(out))
@@ -115,9 +106,12 @@ cors.df <- foreach(g = genes, .combine = "rbind") %dopar% {
   data.frame(symbol = g, out)
 }
 
+# Rename and reoder
+names(cors.df) <- c("symbol", "meth", "exp", "r", "n")
+cors.df <- cors.df[, c("symbol", "meth", "exp", "n", "r")]
+
 # Calculate p-values
-names(cors.df) <- c("symbol", "meth", "exp", "r")
-cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, length(common.ids))
+cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, cors.df$n)
 
 # Calculate q-values
 cors.df$qvalue <- p.adjust(cors.df$pvalue, method = "BH")
