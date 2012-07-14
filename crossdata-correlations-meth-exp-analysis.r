@@ -103,6 +103,10 @@ cors.df <- foreach(g = genes, .combine = "rbind") %dopar% {
     out <- as.data.frame.table(out)  
   }
   
+  # Count number of values used in each correlation
+  out$n <- apply(as.matrix(out), 1, function(x)
+    sum(!is.na(meth.mat[, x[1]]) & !is.na(exp.mat[, x[2]])))
+  
   data.frame(symbol = g, out)
 }
 
