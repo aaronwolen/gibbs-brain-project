@@ -41,6 +41,8 @@ source("4b-load-meth-data.r")
 common.ids <- intersect(eset.exp[, eset.exp$tissue == tissue]$individual,
   eset.meth[, eset.meth$tissue == tissue]$individual)
 
+cat(length(common.ids), "individual IDs present in both datasets.\n")
+
 # Region-specific eSet objects
 exp.sub <- eset.exp[, eset.exp$individual %in% common.ids & 
                       eset.exp$tissue == tissue]
@@ -63,13 +65,13 @@ exp.mat <- exprs(exp.sub)
 meth.mat <- exprs(meth.sub)
 
 # Remove probes with NA values
-if(!"na.count" %in% names(fData(meth.sub))) {
-  na.filter <- apply(exprs(meth.sub), 1, function(x) sum(is.na(x))) == 0
-  cat("Removed", sum(!na.filter), "methylation probes with NA values.\n")
-  
-  meth.mat <- meth.mat[na.filter,]
-  meth.sub <- meth.sub[na.filter,]
-}
+# if(!"na.count" %in% names(fData(meth.sub))) {
+#   na.filter <- apply(exprs(meth.sub), 1, function(x) sum(is.na(x))) == 0
+#   cat("Removed", sum(!na.filter), "methylation probes with NA values.\n")
+#   
+#   meth.mat <- meth.mat[na.filter,]
+#   meth.sub <- meth.sub[na.filter,]
+# }
 
 # Identify meth and exp probes with common targets 
 genes <- intersect(fData(exp.sub)$symbol, fData(meth.sub)$symbol)
@@ -77,6 +79,9 @@ genes <- intersect(fData(exp.sub)$symbol, fData(meth.sub)$symbol)
 # Identify probes corresponding to the common targets
 meth.probes <- subset(fData(meth.sub), symbol %in% genes)$id
 exp.probes <- subset(fData(exp.sub), symbol %in% genes)$id
+
+cat("Identified", length(meth.probes), "methylation probes and ", length(exp.probes),
+    "corresponding to the", length(genes), "present in both datasets.")
 
 # Correct expression for technical variables ------------------------------
 
