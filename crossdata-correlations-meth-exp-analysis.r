@@ -112,5 +112,5 @@ names(cors.df) <- c("symbol", "meth", "exp", "r")
 cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, length(common.ids))
 
 write.csv(cors.df, file = file.path("results",
-  paste("crossdata-meth-exp-correlations-", tolower(region), ".csv", sep = "")),
+  paste("crossdata-meth-exp-correlations-", tolower(tissue), ".csv", sep = "")),
   row.names = FALSE)
