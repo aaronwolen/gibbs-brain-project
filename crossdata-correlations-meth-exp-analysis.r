@@ -110,8 +110,12 @@ cors.df <- foreach(g = genes, .combine = "rbind") %dopar% {
   data.frame(symbol = g, out)
 }
 
+# Calculate p-values
 names(cors.df) <- c("symbol", "meth", "exp", "r")
 cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, length(common.ids))
+
+# Calculate q-values
+cors.df$qvalue <- p.adjust(cors.df$pvalue, method = "BH")
 
 write.csv(cors.df, file = file.path("results",
   paste("crossdata-meth-exp-correlations-", tolower(tissue), ".csv", sep = "")),
