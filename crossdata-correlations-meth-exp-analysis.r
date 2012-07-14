@@ -86,9 +86,11 @@ exp.probes <- subset(fData(exp.sub), symbol %in% genes)$id
 
 meth.mat <- lm_eset(~ age + tissuebank, eset = meth.sub, 
   probesets = meth.probes, use = "pairwise.complete", resid.only = TRUE)
+meth.mat <- t(meth.mat)
   
 exp.mat <- lm_eset(~ age + tissuebank, eset = exp.sub, 
   probesets = exp.probes, use = "pairwise.complete", resid.only = TRUE)
+exp.mat <- t(exp.mat)
 
 # Correlate expression/methylation residuals ------------------------------
 
