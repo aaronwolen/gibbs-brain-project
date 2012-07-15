@@ -1,0 +1,192 @@
+# Correlation between gene expression and local methylation
+
+```{r calculate-correlations, eval=FALSE, include=FALSE}
+  
+# Calculate methylation/expression correlaetions for each tissue. 
+tissues <- c("CRBLM", "FCTX", "TCTX", "PONS")
+
+dir.create("log")
+
+for(t in tissues) {
+  system(paste("R CMD BATCH --no-save --no-restore",
+    shQuote(paste("--args tissue=", shQuote(t), sep = "")),
+    "crossdata-correlations-meth-exp-analysis.r",
+    file.path("log", paste("crossdata-correlations-meth-exp", 
+      tolower(t), "output.r", sep = "-"))))
+}
+
+# Combine results into a single data.frame
+cors.df <- sapply(tissues, simplify = FALSE, function(x)
+  read.csv(paste("results/crossdata-meth-exp-correlations-", 
+    tolower(x), ".csv", sep = "")))
+
+cors.df <- reshape2::melt(cors.df, id.vars = colnames(cors.df[[1]]))
+cors.df <- cbind(tissue = cors.df$L1, subset(cors.df, select = -L1))
+
+# Remove individual results
+file.remove(dir("results", pattern = "crossdata-meth-exp-correlations", 
+  full.names = TRUE))
+
+# Export combined results
+write.csv(cors.df, "results/crossdata-meth-exp-correlations.csv", 
+  row.names = FALSE)
+```
+
+```{r setup, include=FALSE}
+# source("functions/knit_wiki.r")
+# knit_wiki("crossdata-correlations-meth-exp-report.Rmd", output.filename = "Correlations between methylation and expression data")
+
+report.title <- "crossdata-correlations-meth-exp"
+fig.dir <- file.path("figures", report.title)
+fig.prefix <- "cors-meth-exp-"
+
+dir.create(fig.dir, showWarnings = FALSE)
+
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+
+opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+  cache.path = paste(".cache-", report.title, "/", sep = ""),
+  echo=FALSE, results = 'hide',
+  cache=FALSE, fig.width=5, fig.height=4, dpi=150)
+```
+
+```{r load-libraries}
+library(grid)
+library(plyr)
+library(ggplot2)
+ 
+source("functions/print_xtable.r")
+source("functions/save-figures.r")
+```
+
+```{r load-data, cache=FALSE, message=FALSE}
+source("4a-load-exp-data.r")
+source("4b-load-meth-data.r")
+
+cors.df <- read.csv("results/crossdata-meth-exp-correlations.csv",
+  stringsAsFactors = FALSE)
+
+# Annotate probes
+cors.df <- data.frame(cors.df,
+  fData(eset.meth)[cors.df$meth, 
+  c("chr", "position", "strand", "cpg.island", "distance.to.tss", "description")],
+  row.names = NULL)
+```
+
+Explore and visualize correlations results generated between the expression and methylation expression data. 
+
+* script: [`crossdata-correlations-meth-exp-analysis.r`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-meth-exp-analysis.r)
+* results: [`crossdata-meth-exp-correlations.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/crossdata-meth-exp-correlations.csv)
+
+
+## Methods
+
+The analysis was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. Methylation levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis. 
+
+Correlations were calculated using the standard `cor` function and with use set to `"pairwise.complete"`. P-values were obtained using the `WGCNA` package's `corPvalueStudent` function and multiple testing corrections were performed using the Benjamini & Hochberg method for generating q-values.
+
+## Results
+
+```{r results-table, results='asis'}
+results.table <- ddply(cors.df, .(tissue), summarise, 
+  'p-value < 0.05' = sum(pvalue < 0.05),
+  'q-value < 0.1' = sum(qvalue < 0.1))
+
+print_xtable(results.table, col.names = TRUE)
+```
+
+### Histograms
+Histograms of the Pearson correlation values (left) and corresponding p-values (right).
+
+```{r histograms, message=FALSE}
+p.hist <- ggplot(cors.df) + 
+  aes(x = pvalue) + geom_histogram() +
+  facet_grid(tissue~.)
+
+r.hist <- ggplot(cors.df) + 
+  aes(x = r) + geom_histogram() +
+  geom_vline(xintercept = 0, color = "white") +
+  facet_grid(tissue~.)
+
+ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(r.hist, p.hist))
+```
+
+Although the abone distrubtions look roughly null, limiting the histogram of p-values to include only probes with q-values < 0.1 reveals a strong bias toward negative correlations, which is what we'd expect if these results actually represent biologically meanginful relationships. 
+
+```{r histograms-sig-only, message=FALSE, fig.width=2.5}
+r.hist %+% subset(cors.df, qvalue < 0.1) +
+  ylab("count (probes with q-values < 0.1)")
+```
+
+
+```{r examine-sig-probes, include=FALSE}
+
+# Produce visualizations for individual probes with largest correlations
+sig.cors <- subset(cors.df, qvalue < .1)
+sig.cors <- arrange(sig.cors, qvalue)
+
+# Phenotype data for plots
+pdata.cols <- c("geo", "individual", "gender")
+pdata <- rbind(pData(eset.exp)[, pdata.cols], pData(eset.meth)[, pdata.cols])
+
+probe.plots <- list()
+for(i in 1:20) {
+  
+  m.probe <- sig.cors$meth[i]
+  e.probe <- sig.cors$exp[i]
+
+  probe.df <- data.frame(sample = sampleNames(eset.exp),
+    tissue = eset.exp$tissue,
+    expression = exprs(eset.exp)[e.probe,], assay = "expression", 
+    row.names = NULL)
+  
+  probe.df <- rbind(probe.df,
+    data.frame(sample = sampleNames(eset.meth),
+      tissue = eset.meth$tissue,
+      expression = exprs(eset.meth)[m.probe,], assay = "methylation",
+      row.names = NULL))
+   
+  probe.df <- merge(probe.df, pdata, by.x = "sample", by.y = "geo") 
+    
+  probe.df <- reshape2::dcast(probe.df, 
+    individual + gender + tissue ~ assay, value.var = "expression")
+  
+  probe.plots[[paste(m.probe, e.probe, sep = "-")]] <- ggplot(probe.df) +
+    aes(x = methylation, y = expression) +
+    geom_point(aes(color = gender), alpha = 0.5) +
+    geom_rug(alpha = 0.5) +
+    facet_wrap(~tissue, ncol = 2)  +
+    stat_smooth(method = "lm") +
+    xlab(paste("Methylation", " (", m.probe, ")", sep = "")) +
+    ylab(paste("Expression", " (",  e.probe, ")", sep = "")) +
+    opts(title = paste(sig.cors$symbol[i], " (", tolower(sig.cors$tissue[i]), 
+      " cor = ", round(sig.cors$r[i], 2), ")", sep = ""))
+}
+
+pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
+    width = 7, height = 6)
+temp <- lapply(probe.plots, print)
+dev.off()
+```
+
+### Individual probes
+
+#### GSTT1
+In examining individual scatterplots for probes with the strongest cross-data correlations, it's clear that some of these associations are driven by outliers. For example, methylation near GSTT1 is effectively zero for most individuals, but for the small subset of individuals with levels of methylation, GSTT1's expression drops sharply. 
+```{r GSTT1-scatterplot, warning=FALSE}
+plot(probe.plots[["cg24330042-ILMN_1730054"]])
+```
+
+#### MOV10L1
+MOV10L1 is an extreme example. Perhaps the data should be winsorized before calculating correlations? 
+```{r MOV10L1-scatterplot, warning=FALSE}
+plot(probe.plots[["cg05070690-ILMN_1756211"]])
+```
+
+#### PRKY
+Some of the top correlations are driven by sex-chromosome effects. For example, PRKY is located on the Y chromsome so, as expected, there is no detectable methylation in the female subjects. **However, this doesn't explain why expression levels appear to be higher in females?**
+```{r PRKY-scatterplot, warning=FALSE}
+plot(probe.plots[["cg20401549-ILMN_1772163"]])
+```
+
