@@ -1,4 +1,4 @@
-# Within regions, which probes are differentially methylated bentween gender?
+# Which probes are differentially methylated bentween brain region?
 ############################################################################
 library(genefilter)
 source("functions/lm_eset.r")
