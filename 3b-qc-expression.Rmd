@@ -1,0 +1,104 @@
+# QC analysis of expression data
+
+```{r setup, include=FALSE}
+# source("functions/knit_wiki.r")
+# knit_wiki("3b-qc-expression.Rmd", output.filename = "Expression data QC analysis")
+
+report.title <- "qc-expression"
+fig.dir <- file.path("figures", report.title)
+fig.prefix <- "mrna-"
+
+dir.create(fig.dir, showWarnings = FALSE)
+
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+
+opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+  cache.path = paste(".cache-", report.title, "/", sep = ""),
+  echo=FALSE, results = 'hide',
+  cache=FALSE, fig.width=8.5, fig.height=5, dpi=150)
+```
+
+```{r load-libraries, message=FALSE}
+library(affy)
+library(ggplot2)
+library(plyr)
+library(ggaffy)
+
+source("functions/print_xtable.r")
+source("functions/save-figures.r")
+```
+
+```{r graphing-tweaks}
+# Shrink text so labels are legible along x-axis
+axis.text.x <- theme_text(size = 5, colour = "grey50", angle = 90, hjust = 1)
+
+wide.opts <- opts(axis.text.x = axis.text.x, legend.position = "top",
+  legend.margin = grid::unit(0, "lines"))
+
+# Nice figure label
+log.label <- expression(log[2] * " expression")
+```
+
+
+```{r load-data, cache=FALSE}
+load("data/eset-exp.rda")
+```
+
+## Sample filters
+
+### Negative expression values
+
+The following table lists all samples with any negative expression values, which reveals a  small number of samples with excessive numbers of negative values.
+
+```{r negative-count-table, results='asis'}
+eset.exp$neg.count <- apply(exprs(eset.exp), 2, function(x) sum(x < 0))
+
+
+neg.table <- data.frame(table(eset.exp$neg.count))
+
+neg.table <- arrange(
+  pData(eset.exp)[, c("geo", "individual", "tissue", "neg.count")], 
+  desc(neg.count))
+
+neg.table <- subset(neg.table, neg.count > 0)
+
+print_xtable(neg.table, col.names = TRUE)
+```
+
+
+## Distributions of unnormalized data
+
+Data was log-transformed prior to generating the figures below.
+
+```{r log-transform, echo=TRUE, results='markup'}
+exprs(eset.exp) <- log2(exprs(eset.exp))
+```
+
+
+### Quantiles plot
+```{r quantiles}
+ggaffy_quantiles(eset.exp,
+  x = "individual", probs = c(0.01, 0.1, 0.25),
+  fill = "batch", shape = "gender", facet.row = "tissue") +
+  ylab(log.label) + wide.opts
+```
+
+### Boxplot
+```{r boxplot}
+ggaffy_box(eset.exp, x = "individual", color = "batch", facet.row = "tissue",
+  add.outliers = TRUE, outlier.size = .5) +
+  ylab(log.label) + wide.opts
+```
+
+### Relative expression boxplot
+```{r boxplot-rle}
+ggaffy_box(eset.exp, x = "individual", method = "rle", color = "batch",
+  facet.row = "tissue") + ylab(log.label) + wide.opts
+```
+
+### Histogram
+```{r histogram}
+ggaffy_hist(eset.exp, facet.row = "tissue", color = "batch", adjust = 0.5) +
+  xlim(c(5, 10)) + xlab(log.label) + wide.opts
+```
