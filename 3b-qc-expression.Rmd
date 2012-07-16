@@ -98,7 +98,7 @@ ggaffy_box(eset.exp, x = "individual", method = "rle", color = "batch",
 ```
 
 ### Histogram
-```{r histogram}
+```{r histogram, warning=FALSE}
 ggaffy_hist(eset.exp, facet.row = "tissue", color = "batch", adjust = 0.5) +
   xlim(c(5, 10)) + xlab(log.label) + wide.opts
 ```
