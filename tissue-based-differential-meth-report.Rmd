@@ -1,0 +1,108 @@
+# Tissue-based methylation differences
+
+```{r setup, include=FALSE}
+# source("functions/knit_wiki.r")
+# knit_wiki("tissue-based-differential-meth-report.Rmd", output.filename = "Cross-tissue methylation differences")
+
+report.title <- "tissue-based-meth-differences"
+fig.dir <- file.path("figures", report.title)
+fig.prefix <- "meth-tissue-"
+
+dir.create(fig.dir, showWarnings = FALSE)
+
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+
+opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+  cache.path = paste(".cache-", report.title, "/", sep = ""),
+  echo=FALSE, results = 'hide',
+  cache=FALSE, fig.width=5, fig.height=4, dpi=150)
+
+
+```
+
+```{r load-libraries, message=FALSE}
+library(plyr)
+library(reshape2)
+library(ggplot2)
+
+source("functions/plot_matrix.r")
+source("functions/heat_matrix.r")
+source("functions/print_xtable.r")
+source("functions/save-figures.r")
+source("functions/plot_probe.r")
+```
+
+```{r load-data, cache=FALSE}
+source("4b-load-meth-data.r")
+
+t.results <- read.csv("results/tissue-based-differential-methylation.csv",
+                      stringsAsFactors = FALSE)
+```
+
+Explore and visualize results from the tissue-based differential methylation analysis, which sought to identify loci with significantly different levels of methylation between tissue samples collected from each of the 4 brain regions.
+
+## Issues
+This analysis was conducted using unadjusted methylation data. Also, I need to individually test probes with missing values as was done in the [gender-based analysis](https://github.com/aaronwolen/gibbs-brain-project/blob/master/gender-based-differential-meth.r).
+
+* script: [`tissue-based-differential-meth.r`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/tissue-based-differential-meth.r)
+* results: [`tissue-based-differential-methylation.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/tissue-based-differential-methylation.csv)
+
+## Methods
+Prior to conducting the differential expression analysis, low-variance probes were filtered out by removing any probes with an experiment-wide standard deviation < 0.1. The t.test was carried out using the `rowttests` from the `genefilter` package. Multiple testing corrections were performed within each region using the Benjamini & Hochberg method for generating q-values.
+
+## Results
+
+```{r results-table, results='asis'}
+results.table <- ddply(t.results, .(pair), summarise, 
+  'p-value < 0.05' = sum(p.value < 0.05, na.rm = TRUE),
+  'q-value < 0.1' = sum(q.value < 0.1, na.rm = TRUE))
+
+print_xtable(results.table, col.names = TRUE)
+```
+
+### Volcano plot
+Volcano plot of mean cross-tissue methylation differences plotted against raw t-test p-values. As expected, the most robust differences are observed in any of the tissue pairs that include the cerebellum, while the fewest differences exist between the two cortical regions. 
+
+```{r volcano-plot}
+vp <- ggplot(t.results) +
+  aes(x = dm, y = -log10(p.value)) +
+  geom_point(size = 1) +
+  facet_wrap(~pair, ncol = 2) +
+  xlab("Mean cross-tissue difference") + 
+  ylab(expression(-log[10] * " p-value"))
+```
+
+
+### Pairwise tissue comparisons of mean gender differences
+Pairwise comparison of tissue-based methylation differences across all tissue pairs. In all three tissue combinations that include cerebellum, the methylation differences are highly correlated. The comparisons including pons and either of the two cortical regions are also correlated (the correlation direction is a result of the order in which tissues were compared). 
+
+```{r dm-tissue-pairs, fig.width=5.5, fig.height=5.5, warning=FALSE}
+pairs <- unique(t.results$pair)
+
+t.dm <- dcast(t.results, id ~ pair, value.var = "dm")
+
+plot_matrix(data = t.dm, 
+  facet.vars = pairs, alpha = 0.5, size = 0.75) + 
+  stat_smooth(method = "lm") + 
+  xlab("Mean tissue difference")  + ylab("Mean tissue difference") +
+  coord_fixed()
+```
+
+### Mean difference correlations across tissues
+
+The following heatmap depicts the cross-tissue correlations.
+
+```{r dm-tissue-pairs-correlations, fig.width=3.5, fig.height=2.5}
+
+dm.cors <- abs(cor(t.dm[, pairs], use = "pairwise"))
+dimnames(dm.cors) <- lapply(dimnames(dm.cors), function(x) sub("-", "\n", x))
+
+heat_matrix(abs(dm.cors), symmetric = TRUE, legend.title = "cor", font.size = 3)
+
+# Limit correlations to probes with differences
+sig.probes <- unique(subset(t.results, q.value < 0.05)$id)
+sig.dm.cors <- abs(cor(subset(t.dm, id %in% sig.probes)[, pairs], use = "pairwise"))
+
+sig.dm.cors - dm.cors
+```
