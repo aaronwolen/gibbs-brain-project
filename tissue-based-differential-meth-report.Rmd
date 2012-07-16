@@ -43,7 +43,7 @@ t.results <- read.csv("results/tissue-based-differential-methylation.csv",
 Explore and visualize results from the tissue-based differential methylation analysis, which sought to identify loci with significantly different levels of methylation between tissue samples collected from each of the 4 brain regions.
 
 ## Issues
-This analysis was conducted using unadjusted methylation data. Also, I need to individually test probes with missing values as was done in the [gender-based analysis](https://github.com/aaronwolen/gibbs-brain-project/blob/master/gender-based-differential-meth.r).
+This analysis was conducted using unadjusted methylation data. Also, I need to individually test probes with missing values as was done in the [gender-based analysis](https://github.com/aaronwolen/gibbs-brain-project/blob/master/gender-based-differential-meth.r). After doing so, warning suppression for many of the chunks can be removed and `"pairwise.complete"` no longer needs to be specified when calculating correlations. 
 
 * script: [`tissue-based-differential-meth.r`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/tissue-based-differential-meth.r)
 * results: [`tissue-based-differential-methylation.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/tissue-based-differential-methylation.csv)
@@ -64,8 +64,8 @@ print_xtable(results.table, col.names = TRUE)
 ### Volcano plot
 Volcano plot of mean cross-tissue methylation differences plotted against raw t-test p-values. As expected, the most robust differences are observed in any of the tissue pairs that include the cerebellum, while the fewest differences exist between the two cortical regions. 
 
-```{r volcano-plot}
-vp <- ggplot(t.results) +
+```{r volcano-plot, warning=FALSE}
+ggplot(t.results) +
   aes(x = dm, y = -log10(p.value)) +
   geom_point(size = 1) +
   facet_wrap(~pair, ncol = 2) +
