@@ -1,0 +1,108 @@
+# QC analysis of methylation data
+
+```{r setup, include=FALSE}
+# source("functions/knit_wiki.r")
+# knit_wiki("3a-qc-methylation.Rmd", output.filename = "Methylation data QC analysis")
+
+report.title <- "qc-methylation"
+fig.dir <- file.path("figures", report.title)
+fig.prefix <- "meth-"
+
+dir.create(fig.dir, showWarnings = FALSE)
+
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+
+opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+  cache.path = paste(".cache-", report.title, "/", sep = ""),
+  echo=FALSE, results = 'hide',
+  cache=FALSE, fig.width=8.5, fig.height=5, dpi=150)
+```
+
+```{r load-libraries, message=FALSE}
+library(affy)
+library(ggplot2)
+library(plyr)
+library(ggaffy)
+
+source("functions/print_xtable.r")
+source("functions/save-figures.r")
+```
+
+```{r graphing-tweaks}
+# Shrink text so labels are legible along x-axis
+axis.text.x <- theme_text(size = 5, colour = "grey50", angle = 90, hjust = 1)
+
+wide.opts <- opts(axis.text.x = axis.text.x, legend.position = "top",
+  legend.margin = grid::unit(0, "lines"))
+```
+
+
+```{r load-data, cache=FALSE}
+load("data/eset-meth.rda")
+```
+
+## Sample filters
+
+### Count NAs per sample
+The following histogram depicts the number of NA values per sample. While most samples contain on average about ~16 missing values, there is a subset of samples with more than 50 missing values. 
+
+```{r na-count-histogram, message=FALSE, fig.width=5, fig.height=3}
+eset.meth$na.count <- apply(exprs(eset.meth), 2, function(x) sum(is.na(x)))
+
+qplot(eset.meth$na.count) + 
+  ylab("Sample count") + xlab("NA methylation probe count")
+```
+
+```{r na-count-individuals}
+ggplot(pData(eset.meth)) + 
+  aes(x = individual, y = na.count, fill = batch) +
+  geom_bar() + facet_wrap(~tissue, ncol = 1) +
+  ylab("NA methylation probe count") +
+  scale_fill_brewer(palette = "Set1") +
+  opts(legend.position = "top", axis.text.x = axis.text.x)
+```
+
+### Count NAs per probe
+A few red probes stand out as having a high number of missing values.
+
+```{r na-count-probes, fig.width=5, fig.height=5}
+fData(eset.meth)$na.count <- apply(exprs(eset.meth), 1, function(x) sum(is.na(x)))
+
+qplot(data = fData(eset.meth), x =  na.count, geom = "density",
+      facets = color.channel ~ ., fill = I("black")) + geom_rug()
+```
+
+```{r na-count-probes-table, results='asis'}
+print_xtable(
+  arrange(fData(eset.meth), desc(na.count))[1:10, c("id", "symbol", "na.count")],
+  col.names = TRUE)
+```
+
+
+## Distributions of unnormalized data
+
+### Quantiles plot
+```{r quantiles}
+ggaffy_quantiles(eset.meth,
+  x = "individual", probs = c(0.01, 0.1, 0.25),
+  fill = "batch", shape = "gender", facet.row = "tissue") +
+  wide.opts
+```
+
+### Boxplot
+```{r boxplot}
+ggaffy_box(eset.meth, x = "individual", fill = "batch", facet.row = "tissue") +
+  wide.opts
+```
+
+### Relative expression boxplot
+```{r boxplot-rle}
+ggaffy_box(eset.meth, x = "individual", method = "rle",
+  fill = "batch", facet.row = "tissue") + wide.opts
+```
+
+### Histogram
+```{r histogram}
+ggaffy_hist(eset.meth, facet.row = "tissue", color = "batch", adjust = 0.5)
+```
