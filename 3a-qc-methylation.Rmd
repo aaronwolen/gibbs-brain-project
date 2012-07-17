@@ -103,6 +103,7 @@ ggaffy_box(eset.meth, x = "individual", method = "rle",
 ```
 
 ### Histogram
-```{r histogram}
-ggaffy_hist(eset.meth, facet.row = "tissue", color = "batch", adjust = 0.5)
+```{r histogram, fig.width=5, fig.height=8.5}
+ggaffy_hist(eset.meth, facet.row = "tissue", color = "batch", adjust = 0.5) +
+  wide.opts
 ```
