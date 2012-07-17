@@ -75,7 +75,6 @@ Data was log-transformed prior to generating the figures below.
 exprs(eset.exp) <- log2(exprs(eset.exp))
 ```
 
-
 ### Quantiles plot
 ```{r quantiles}
 ggaffy_quantiles(eset.exp,
@@ -98,7 +97,21 @@ ggaffy_box(eset.exp, x = "individual", method = "rle", color = "batch",
 ```
 
 ### Histogram
-```{r histogram, warning=FALSE}
-ggaffy_hist(eset.exp, facet.row = "tissue", color = "batch", adjust = 0.5) +
-  xlim(c(5, 10)) + xlab(log.label) + wide.opts
+
+
+```{r histogram, warning=FALSE, fig.width=5, fig.height=8.5}
+ggaffy_hist(eset.exp, color = "batch", adjust = 0.5, facet.row = "tissue") +
+  xlim(c(6, 9)) + xlab(log.label) + wide.opts
 ```
+
+
+## Sample clustering
+Hierarchical clustering of all samples using euclidean distance produces results very similar to what Gibbs published in [figure 1b](http://www.plosgenetics.org/article/info:doi/10.1371/journal.pgen.1000952?imageURI=info:doi/10.1371/journal.pgen.1000952.g001) of their paper. When pearson correlation distance is used there is very little separation between the two cortical regions.
+
+```{r sample-cluster-heatmap, fig.height=4, fig.width=4.5}
+ggaffy_clustmat(eset.exp, color = "tissue", raster = TRUE, 
+  dist.method = "euclidean") + 
+opts(axis.text.x = theme_blank(), axis.text.y = theme_blank(),
+  axis.ticks = theme_blank())
+```
+
