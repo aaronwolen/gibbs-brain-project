@@ -107,3 +107,13 @@ ggaffy_box(eset.meth, x = "individual", method = "rle",
 ggaffy_hist(eset.meth, facet.row = "tissue", color = "batch", adjust = 0.5) +
   wide.opts
 ```
+
+## Sample clustering
+Hierarchical clustering of all samples using euclidean distance produces results very similar to what Gibbs published in [figure 1a](http://www.plosgenetics.org/article/info:doi/10.1371/journal.pgen.1000952?imageURI=info:doi/10.1371/journal.pgen.1000952.g001) of their paper.
+
+```{r sample-cluster-heatmap, fig.height=4, fig.width=4.5}
+ggaffy_clustmat(eset.meth, color = "tissue", raster = TRUE, 
+  dist.method = "euclidean") + 
+opts(axis.text.x = theme_blank(), axis.text.y = theme_blank(),
+  axis.ticks = theme_blank())
+```
