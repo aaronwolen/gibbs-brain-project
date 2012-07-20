@@ -67,16 +67,16 @@ ggplot(pData(eset.meth)) +
 A few red probes stand out as having a high number of missing values.
 
 ```{r na-count-probes, fig.width=5, fig.height=5}
-fData(eset.meth)$na.count <- apply(exprs(eset.meth), 1, function(x) sum(is.na(x)))
+fData(eset.meth)$na.count <- apply(exprs(eset.meth), 1, 
+  function(x) sum(is.na(x)))
 
 qplot(data = fData(eset.meth), x =  na.count, geom = "density",
       facets = color.channel ~ ., fill = I("black")) + geom_rug()
 ```
 
 ```{r na-count-probes-table, results='asis'}
-print_xtable(
-  arrange(fData(eset.meth), desc(na.count))[1:10, c("id", "symbol", "na.count")],
-  col.names = TRUE)
+print_xtable(arrange(fData(eset.meth), 
+  desc(na.count))[1:10, c("id", "symbol", "na.count")], col.names = TRUE)
 ```
 
 
