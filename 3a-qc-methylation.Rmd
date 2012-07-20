@@ -11,7 +11,7 @@ fig.prefix <- "meth-"
 dir.create(fig.dir, showWarnings = FALSE)
 
 opts_knit$set(upload.fun = function(file, 
-  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+  key = "fbd62838790b8f6192669e30c3fb5346") imgur_upload(file, key))
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
