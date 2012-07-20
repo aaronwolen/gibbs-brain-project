@@ -1,0 +1,103 @@
+# QC analysis of microRNA expression data
+
+```{r setup, include=FALSE}
+# source("functions/knit_wiki.r")
+# knit_wiki("3c-qc-microrna.Rmd", output.filename = "microRNA data QC analysis")
+
+report.title <- "qc-microrna"
+fig.dir <- file.path("figures", report.title)
+fig.prefix <- "microrna-"
+
+dir.create(fig.dir, showWarnings = FALSE)
+
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+
+opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+  cache.path = paste(".cache-", report.title, "/", sep = ""),
+  echo=FALSE, results = 'hide',
+  cache=FALSE, fig.width=8.5, fig.height=5, dpi=150)
+```
+
+```{r load-libraries, message=FALSE}
+library(affy)
+library(ggplot2)
+library(plyr)
+library(ggaffy)
+
+source("functions/print_xtable.r")
+source("functions/save-figures.r")
+```
+
+```{r graphing-tweaks}
+# Shrink text so labels are legible along x-axis
+axis.text.x <- theme_text(size = 5, colour = "grey50", angle = 90, hjust = 1)
+
+wide.opts <- opts(axis.text.x = axis.text.x, legend.position = "top",
+  legend.margin = grid::unit(0, "lines"))
+
+# Nice figure label
+log.label <- expression(log[2] * " microRNA expression")
+```
+
+
+```{r load-data, cache=FALSE}
+load("data/eset-micro.rda")
+```
+
+
+## Distributions of data
+Data was log-transformed prior to generating the figures below.
+
+```{r log-transform, echo=TRUE, results='markup'}
+exprs(eset.micro) <- log2(exprs(eset.micro))
+```
+
+### Quantiles plot
+```{r quantiles}
+ggaffy_quantiles(eset.micro,
+  x = "individual", probs = c(0.01, 0.1, 0.25),
+  fill = "batch", shape = "gender", facet.row = "tissue") +
+  ylab(log.label) + wide.opts
+```
+
+### Boxplot
+```{r boxplot}
+ggaffy_box(eset.micro, x = "individual", color = "batch", facet.row = "tissue",
+  add.outliers = TRUE, outlier.size = .5) +
+  ylab(log.label) + wide.opts
+```
+
+### Relative expression boxplot
+```{r boxplot-rle}
+ggaffy_box(eset.micro, x = "individual", method = "rle", color = "batch",
+  facet.row = "tissue") + ylab(log.label) + wide.opts
+```
+
+### Histogram
+```{r histogram, warning=FALSE, fig.width=5, fig.height=8.5}
+ggaffy_hist(eset.micro, color = "batch", adjust = 0.5, facet.row = "tissue") +
+  wide.opts + xlab(log.label)
+```
+
+
+## Sample clustering
+Hierarchical clustering of all samples using euclidean distance produces results very similar to the mRNA expression and metylation data. However, like [the methylation data](Methylation data QC analysis), there is little separation between the cortical regions. 
+
+```{r sample-cluster-heatmap, fig.height=4, fig.width=4.5}
+ggaffy_clustmat(eset.micro, color = "tissue", raster = TRUE, 
+  dist.method = "euclidean") + 
+opts(axis.text.x = theme_blank(), axis.text.y = theme_blank(),
+  axis.ticks = theme_blank())
+```
+
+## Normalization 
+Although the data appears to have been normalized, there are systematic differences in intensity across the different tissues. Should the data be normalized across all tissues prior to looking for differenetial expression between tissues? 
+
+```{r quantiles-across-tissues}
+ggaffy_quantiles(eset.micro,
+  x = "individual", probs = c(0.01, 0.1, 0.25), facet.col = "tissue") +
+  ylab(log.label) + wide.opts + opts(axis.text.x = theme_blank(),
+    panel.grid.major = theme_blank(), panel.grid.minor = theme_blank(),
+    axis.ticks = theme_blank())
+```
