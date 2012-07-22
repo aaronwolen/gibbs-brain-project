@@ -147,7 +147,7 @@ pdata.cols <- c("geo", "individual", "gender")
 pdata <- rbind(pData(eset.exp)[, pdata.cols], pData(eset.micro)[, pdata.cols])
 
 probe.plots <- list()
-for(i in 1:20) {
+for(i in 1:50) {
   
   m.probe <- sig.cors$micro[i]
   e.probe <- sig.cors$exp[i]
