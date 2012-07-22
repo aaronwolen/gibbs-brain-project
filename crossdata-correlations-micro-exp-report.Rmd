@@ -62,7 +62,7 @@ source("functions/save-figures.r")
 
 ```{r load-data, cache=FALSE, message=FALSE}
 source("4a-load-exp-data.r")
-load("data/eset-micro.rda")
+source("4c-load-micro-data.r")
 
 cors.df <- read.csv("results/crossdata-micro-exp-correlations.csv",
   stringsAsFactors = FALSE)

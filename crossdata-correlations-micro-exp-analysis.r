@@ -32,7 +32,7 @@ registerDoMC(n.cores)
 
 # Load data ---------------------------------------------------------------
 source("4a-load-exp-data.r")
-load("data/eset-micro.rda")
+source("4c-load-micro-data.r")
 
 
 
