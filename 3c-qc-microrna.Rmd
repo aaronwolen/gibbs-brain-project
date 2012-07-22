@@ -101,3 +101,69 @@ ggaffy_quantiles(eset.micro,
     panel.grid.major = theme_blank(), panel.grid.minor = theme_blank(),
     axis.ticks = theme_blank())
 ```
+
+## Sample correlations with median reference
+The original correlation analysis performed between microRNA and mRNA expression data revealed that many of the strongest correlations were being driven by a small number of outlier samples, particiularly the cerebellar data for individuals 1037, 1076, 827, 4903 and several others. When inspecting the relationship between these samples and a pseudo-reference sample generated from the gene-wise median across all samples within a given tissue, they stand out as outliers.
+
+The following table lists all samples with psuedo-reference correlations that are at least 2 SDs below the tissue-specific mean. 
+
+```{r median-ref-correlations, results='asis'}
+tissues <- levels(eset.micro$tissue)
+
+ref.cors <- list()
+for(t in tissues) {
+  micro.sub <- eset.micro[, eset.micro$tissue == t]
+  exp.mat <- exprs(micro.sub)
+  med.ref <- rowMedians(exp.mat)
+  cors.sub <- apply(exp.mat, 2, cor, y = med.ref, use = "pairwise.complete")
+  cors.sub <- data.frame(tissue = t, sample = sampleNames(micro.sub),
+    individual = micro.sub$individual, r = cors.sub)
+  ref.cors[[t]] <- cors.sub
+}
+
+ref.cors <- data.frame(do.call("rbind", ref.cors), row.names = NULL)
+
+# Calculate outlier threshold
+thresh <- mean(ref.cors$r) - (sd(ref.cors$r) * 2)
+
+# Table of outlier samples
+ref.cors$outlier <- ifelse(ref.cors$r < thresh, TRUE, FALSE)
+print_xtable(subset(ref.cors, outlier, select = -outlier), col.names = TRUE)
+
+# Export correlations
+write.csv(ref.cors, paste(file.path(fig.dir, fig.prefix), 
+  "median-ref-correlations.csv", sep = ""), row.names = FALSE)
+```
+
+
+### Cerebellum median reference correlations
+```{r median-ref-correlations-crblm, fig.height = 8.5}
+micro.sub <- eset.micro[, eset.micro$tissue == "CRBLM"]
+sampleNames(micro.sub) <- micro.sub$individual
+ggaffy_scatgrid(micro.sub)
+```
+
+### Pons median reference correlations
+```{r median-ref-correlations-pons, fig.height = 8.5}
+micro.sub <- eset.micro[, eset.micro$tissue == "PONS"]
+sampleNames(micro.sub) <- micro.sub$individual
+ggaffy_scatgrid(micro.sub)
+```
+
+### Frontal cortex median reference correlations
+```{r median-ref-correlations-fctx, fig.height = 8.5}
+micro.sub <- eset.micro[, eset.micro$tissue == "FCTX"]
+sampleNames(micro.sub) <- micro.sub$individual
+ggaffy_scatgrid(micro.sub)
+```
+
+### Temporal cortex
+```{r median-ref-correlations-tctx, fig.height = 8.5}
+micro.sub <- eset.micro[, eset.micro$tissue == "TCTX"]
+sampleNames(micro.sub) <- micro.sub$individual
+ggaffy_scatgrid(micro.sub)
+```
+
+## Summary
+
+* Remove `r I(sum(ref.cors$outlier))` samples with psuedo-reference correlations less than 2 SDs below the mean.
