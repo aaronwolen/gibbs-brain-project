@@ -27,9 +27,8 @@ cors.df <- cbind(tissue = cors.df$L1, subset(cors.df, select = -L1))
 file.remove(dir("results", pattern = "crossdata-micro-exp-correlations", 
   full.names = TRUE))
 
-# Export combined results
-write.csv(cors.df, "results/crossdata-micro-exp-correlations.csv", 
-  row.names = FALSE)
+# Export combined results as compressed rda file
+save(cors.df, file = "results/crossdata-micro-exp-correlations.rda")
 ```
 
 ```{r setup, include=FALSE}
@@ -64,8 +63,7 @@ source("functions/save-figures.r")
 source("4a-load-exp-data.r")
 source("4c-load-micro-data.r")
 
-cors.df <- read.csv("results/crossdata-micro-exp-correlations.csv",
-  stringsAsFactors = FALSE)
+load("results/crossdata-micro-exp-correlations.rda")
 
 # Annotate probes
 cors.df <- data.frame(cors.df,
