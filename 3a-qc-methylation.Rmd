@@ -15,8 +15,8 @@ opts_knit$set(upload.fun = function(file,
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
-  echo=FALSE, results = 'hide',
-  cache=FALSE, fig.width=8.5, fig.height=5, dpi=150)
+  echo=FALSE, results='hide',
+  cache=TRUE, fig.width=8.5, fig.height=5, dpi=150)
 ```
 
 ```{r load-libraries, message=FALSE}
@@ -116,4 +116,69 @@ ggaffy_clustmat(eset.meth, color = "tissue", raster = TRUE,
   dist.method = "euclidean") + 
 opts(axis.text.x = theme_blank(), axis.text.y = theme_blank(),
   axis.ticks = theme_blank())
+```
+
+## Sample correlations with median reference
+Inspect the relationship between each sample and a pseudo-reference sample generated from the gene-wise median across all samples within a given tissue. The following table lists all samples with psuedo-reference correlations that are at least 2 SDs below the tissue-specific mean. 
+
+```{r median-ref-correlations, results='asis'}
+tissues <- levels(eset.meth$tissue)
+
+ref.cors <- list()
+for(t in tissues) {
+  meth.sub <- eset.meth[, eset.meth$tissue == t]
+  exp.mat <- exprs(meth.sub)
+  med.ref <- rowMedians(exp.mat)
+  cors.sub <- apply(exp.mat, 2, cor, y = med.ref, use = "pairwise.complete")
+  cors.sub <- data.frame(tissue = t, sample = sampleNames(meth.sub),
+    individual = meth.sub$individual, r = cors.sub)
+  ref.cors[[t]] <- cors.sub
+}
+
+ref.cors <- data.frame(do.call("rbind", ref.cors), row.names = NULL)
+
+# Calculate outlier threshold
+thresh <- mean(ref.cors$r) - (sd(ref.cors$r) * 2)
+
+# Table of outlier samples
+ref.cors$outlier <- ifelse(ref.cors$r < thresh, TRUE, FALSE)
+print_xtable(subset(ref.cors, outlier, select = -outlier), col.names = TRUE)
+
+# Export correlations
+write.csv(ref.cors, paste(file.path(fig.dir, fig.prefix), 
+  "median-ref-correlations.csv", sep = ""), row.names = FALSE)
+```
+
+
+### Cerebellum median reference correlations
+```{r median-ref-correlations-crblm, fig.height = 8.5}
+
+# Currently ggaffy_scatgrid cannot deal with NA values. When this is fixed it
+# won't be necessary to filter by na.probes.
+na.probes <- apply(exprs(eset.meth), 1, function(x) sum(is.na(x)))
+
+meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "CRBLM"]
+sampleNames(meth.sub) <- meth.sub$individual
+ggaffy_scatgrid(meth.sub)
+```
+
+### Pons median reference correlations
+```{r median-ref-correlations-pons, fig.height = 8.5}
+meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "PONS"]
+sampleNames(meth.sub) <- meth.sub$individual
+ggaffy_scatgrid(meth.sub)
+```
+
+### Frontal cortex median reference correlations
+```{r median-ref-correlations-fctx, fig.height = 8.5}
+meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "FCTX"]
+sampleNames(meth.sub) <- meth.sub$individual
+ggaffy_scatgrid(meth.sub)
+```
+
+### Temporal cortex
+```{r median-ref-correlations-tctx, fig.height = 8.5}
+meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "TCTX"]
+sampleNames(meth.sub) <- meth.sub$individual
+ggaffy_scatgrid(meth.sub)
 ```
