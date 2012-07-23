@@ -152,33 +152,28 @@ write.csv(ref.cors, paste(file.path(fig.dir, fig.prefix),
 
 ### Cerebellum median reference correlations
 ```{r median-ref-correlations-crblm, fig.height = 8.5}
-
-# Currently ggaffy_scatgrid cannot deal with NA values. When this is fixed it
-# won't be necessary to filter by na.probes.
-na.probes <- apply(exprs(eset.meth), 1, function(x) sum(is.na(x)))
-
-meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "CRBLM"]
+meth.sub <- eset.meth[, eset.meth$tissue == "CRBLM"]
 sampleNames(meth.sub) <- meth.sub$individual
 ggaffy_scatgrid(meth.sub)
 ```
 
 ### Pons median reference correlations
 ```{r median-ref-correlations-pons, fig.height = 8.5}
-meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "PONS"]
+meth.sub <- eset.meth[, eset.meth$tissue == "PONS"]
 sampleNames(meth.sub) <- meth.sub$individual
 ggaffy_scatgrid(meth.sub)
 ```
 
 ### Frontal cortex median reference correlations
 ```{r median-ref-correlations-fctx, fig.height = 8.5}
-meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "FCTX"]
+meth.sub <- eset.meth[, eset.meth$tissue == "FCTX"]
 sampleNames(meth.sub) <- meth.sub$individual
 ggaffy_scatgrid(meth.sub)
 ```
 
 ### Temporal cortex
 ```{r median-ref-correlations-tctx, fig.height = 8.5}
-meth.sub <- eset.meth[na.probes == 0, eset.meth$tissue == "TCTX"]
+meth.sub <- eset.meth[, eset.meth$tissue == "TCTX"]
 sampleNames(meth.sub) <- meth.sub$individual
 ggaffy_scatgrid(meth.sub)
 ```
