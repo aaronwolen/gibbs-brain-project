@@ -8,7 +8,7 @@ library(Biobase)
 library(plyr)
 library(ggplot2)
 source("functions/cleaning-functions.r")
-source("functions/load_gists.r")
+source("functions/load-gists.r")
 
 # Data' -------------------------------------------------------------------
 load("data/GSE15745_raw-data.rda")
