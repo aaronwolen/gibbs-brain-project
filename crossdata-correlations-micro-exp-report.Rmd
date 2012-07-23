@@ -77,10 +77,6 @@ Explore and visualize correlation results generated between the microRNA and mRN
 * results: [`crossdata-micro-exp-correlations.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/crossdata-micro-exp-correlations.csv)
 
 
-## Issues
-
-Inspecting individual scatter-plots for some of the most correlated microRNA/mRNA pairs revealed that many of the positive correlations in cerebellum are being driven by a small number of outliers, particularly individuals 827 and 1037.
-
 ## Methods
 
 The analysis was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. mRNA expression levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis. microRNA expression levels were not adjusted.
