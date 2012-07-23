@@ -37,11 +37,6 @@ if(any(!table(pdata$individual) <= check_max.n)) {
   stop("pdata$individual is not a unique identifier.")
 }
 
-ggplot(pdata, aes(x = individual, fill = tissue)) +
-  geom_bar() + facet_grid(assay ~ .) +
-  opts(legend.position = "top",
-       axis.text.x = theme_text(angle = 90, hjust = 1, size = 7, colour = "grey50"))
-ggsave("figures/pdata_sample-count-check.pdf", width = 13, height = 6)
 
 # Isolate invariant and MIAME-relevant columns ----------------------------
 invar.pdata <- pdata[1, invariant_cols(pdata)]

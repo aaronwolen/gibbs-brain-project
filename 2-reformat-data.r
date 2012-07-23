@@ -6,12 +6,11 @@
 
 library(Biobase)
 library(plyr)
-library(ggplot2)
 source("functions/cleaning-functions.r")
 source("functions/load-gists.r")
 
 # Data' -------------------------------------------------------------------
-load("data/GSE15745_raw-data.rda")
+load("data/geo-raw-data.rda")
 
 # sample phenotype data from publication
 sample.pdata <- read.csv("data/pm20485568_supptable_sampleinfo.csv")
