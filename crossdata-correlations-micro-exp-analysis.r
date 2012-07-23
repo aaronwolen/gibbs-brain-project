@@ -9,7 +9,6 @@ library(RmiR.hsa)
 library(foreach)
 library(doMC)
 
-source("functions/lm_eset.r")
 
 # Read in command line arguments ------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
@@ -30,10 +29,9 @@ n.cores <- multicore:::detectCores()
 registerDoMC(n.cores)
 
 
-# Load data ---------------------------------------------------------------
-source("4a-load-exp-data.r")
-source("4c-load-micro-data.r")
-
+# Load adjusted data ------------------------------------------------------
+load("data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda")
+load("data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda")
 
 
 # Identify  miroRNA targets -----------------------------------------------
@@ -69,7 +67,7 @@ sampleNames(micro.sub) <- micro.sub$individual
 
 # Reorder second dataset to match first
 micro.sub <- micro.sub[, sampleNames(exp.sub)]
-stopifnot(sampleNames(exp.sub) == sampleNames(micro.sub))
+stopifnot(all(sampleNames(exp.sub) == sampleNames(micro.sub)))
 
 
 # Extract expression matrices ---------------------------------------------
@@ -84,19 +82,10 @@ entrezs <- intersect(fData(exp.sub)$entrez, mirbase$gene_id)
 micro.probes <- subset(fData(micro.sub), symbol %in% mirs)$id
 exp.probes <- subset(fData(exp.sub), entrez %in% entrezs)$id
 
-# Correct expression for technical variables ------------------------------
 
-# Setting lm_eset's use argument = "pairwise.complete" causes it to loop through
-# probes so missing values are be handled on a case by case basis. The result
-# is a matrix of residuals.
-
-# micro.mat <- lm_eset(~ age + tissuebank, eset = micro.sub, 
-#   probesets = micro.probes, use = "pairwise.complete", resid.only = TRUE)
-micro.mat <- t(micro.mat)
-  
-exp.mat <- lm_eset(~ age + tissuebank, eset = exp.sub, 
-  probesets = exp.probes, use = "pairwise.complete", resid.only = TRUE)
+# Transpose matrices for correlation analysis -----------------------------
 exp.mat <- t(exp.mat)
+micro.mat <- t(micro.mat)
 
 # Correlate expression/methylation residuals ------------------------------
 

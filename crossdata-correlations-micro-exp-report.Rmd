@@ -60,8 +60,8 @@ source("functions/save-figures.r")
 ```
 
 ```{r load-data, cache=FALSE, message=FALSE}
-source("4a-load-exp-data.r")
-source("4c-load-micro-data.r")
+load("data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda")
+load("data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda")
 
 load("results/crossdata-micro-exp-correlations.rda")
 
