@@ -112,7 +112,7 @@ tissues <- levels(eset.micro$tissue)
 
 ref.cors <- list()
 for(t in tissues) {
-  micro.sub <- eset.micro[, eset.micro$tissue == t]
+  micro.sub <- eset.micro[fData(eset.micro)$chr %in% 1:22, eset.micro$tissue == t]
   exp.mat <- exprs(micro.sub)
   med.ref <- rowMedians(exp.mat)
   cors.sub <- apply(exp.mat, 2, cor, y = med.ref, use = "pairwise.complete")
