@@ -118,62 +118,82 @@ opts(axis.text.x = theme_blank(), axis.text.y = theme_blank(),
   axis.ticks = theme_blank())
 ```
 
-## Sample correlations with median reference
-Inspect the relationship between each sample and a pseudo-reference sample generated from the gene-wise median across all samples within a given tissue. The following table lists all samples with psuedo-reference correlations that are at least 2 SDs below the tissue-specific mean. 
+## Sample comparisons with median reference
+Inspect the relationship between each sample and a pseudo-reference sample, generated from the gene-wise median across all samples within a given tissue. The following table lists all samples with squared median deviations that are at least 2 SDs above the tissue-specific mean. 
 
-```{r median-ref-correlations, results='asis'}
+```{r median-ref-comparisons, results='asis'}
 tissues <- levels(eset.meth$tissue)
 
-ref.cors <- list()
+# Consider only autosomal probes
+eset.auto <- eset.meth[fData(eset.meth)$chr %in% 1:22, ]
+
+# Reference comparison results
+ref.comps <- list()
 for(t in tissues) {
-  meth.sub <- eset.meth[fData(eset.meth)$chr %in% 1:22, eset.meth$tissue == t]
-  exp.mat <- exprs(meth.sub)
+  eset.t <- eset.auto[, eset.auto$tissue == t]
+  exp.mat <- exprs(eset.t)
   med.ref <- rowMedians(exp.mat)
+  
+  # Correlations with median
   cors.sub <- apply(exp.mat, 2, cor, y = med.ref, use = "pairwise.complete")
-  cors.sub <- data.frame(tissue = t, sample = sampleNames(meth.sub),
-    individual = meth.sub$individual, r = cors.sub)
-  ref.cors[[t]] <- cors.sub
+  
+  # Sum of deviations from the median
+  devs.sub <- apply(exp.mat, 2, function(x) sum((med.ref - x)^2, na.rm = TRUE))
+  
+  out <- data.frame(tissue = t, sample = sampleNames(eset.t),
+    individual = eset.t$individual, cor = cors.sub, dev = devs.sub)
+  ref.comps[[t]] <- out
 }
 
-ref.cors <- data.frame(do.call("rbind", ref.cors), row.names = NULL)
+ref.comps <- data.frame(do.call("rbind", ref.comps), row.names = NULL)
 
 # Calculate outlier threshold
-thresh <- mean(ref.cors$r) - (sd(ref.cors$r) * 2)
+thresh <- mean(ref.comps$dev) + (sd(ref.comps$dev) * 2)
 
 # Table of outlier samples
-ref.cors$outlier <- ifelse(ref.cors$r < thresh, TRUE, FALSE)
-print_xtable(subset(ref.cors, outlier, select = -outlier), col.names = TRUE)
+ref.comps$outlier <- ifelse(ref.comps$dev > thresh, TRUE, FALSE)
+print_xtable(subset(ref.comps, outlier, select = -outlier), col.names = TRUE)
 
-# Export correlations
-write.csv(ref.cors, paste(file.path(fig.dir, fig.prefix), 
-  "median-ref-correlations.csv", sep = ""), row.names = FALSE)
+# Export comparisons
+write.csv(ref.comps, paste(file.path(fig.dir, fig.prefix), 
+  "median-ref-comparisons.csv", sep = ""), row.names = FALSE)
+```
+
+### Outlier threshold
+Below is a summary of all sample deviations from the median reference, the red line indicates the outlier threshold. 
+```{r median-ref-deviations, fig.width=3, fig.height=5}
+qplot(data = ref.comps, x = factor(1), y = dev, geom = "boxplot") +
+  geom_hline(yintercept = thresh, color = "red") +
+  ylab("Sum of squared median deviations") +
+  opts(axis.text.x = theme_blank(), axis.title.x = theme_blank())
+
 ```
 
 
-### Cerebellum median reference correlations
-```{r median-ref-correlations-crblm, fig.height = 8.5}
-meth.sub <- eset.meth[, eset.meth$tissue == "CRBLM"]
-sampleNames(meth.sub) <- meth.sub$individual
-ggaffy_scatgrid(meth.sub)
+### Cerebellum median reference comparison
+```{r median-ref-comparisons-crblm, fig.height = 8.5}
+eset.t <- eset.auto[, eset.auto$tissue == "CRBLM"]
+sampleNames(eset.t) <- eset.t$individual
+ggaffy_scatgrid(eset.t)
 ```
 
-### Pons median reference correlations
-```{r median-ref-correlations-pons, fig.height = 8.5}
-meth.sub <- eset.meth[, eset.meth$tissue == "PONS"]
-sampleNames(meth.sub) <- meth.sub$individual
-ggaffy_scatgrid(meth.sub)
+### Pons median reference comparison
+```{r median-ref-comparisons-pons, fig.height = 8.5}
+eset.t <- eset.auto[, eset.auto$tissue == "PONS"]
+sampleNames(eset.t) <- eset.t$individual
+ggaffy_scatgrid(eset.t)
 ```
 
-### Frontal cortex median reference correlations
-```{r median-ref-correlations-fctx, fig.height = 8.5}
-meth.sub <- eset.meth[, eset.meth$tissue == "FCTX"]
-sampleNames(meth.sub) <- meth.sub$individual
-ggaffy_scatgrid(meth.sub)
+### Frontal cortex median reference comparison
+```{r median-ref-comparisons-fctx, fig.height = 8.5}
+eset.t <- eset.auto[, eset.auto$tissue == "FCTX"]
+sampleNames(eset.t) <- eset.t$individual
+ggaffy_scatgrid(eset.t)
 ```
 
-### Temporal cortex
-```{r median-ref-correlations-tctx, fig.height = 8.5}
-meth.sub <- eset.meth[, eset.meth$tissue == "TCTX"]
-sampleNames(meth.sub) <- meth.sub$individual
-ggaffy_scatgrid(meth.sub)
+### Temporal cortex median reference comparison
+```{r median-ref-comparisons-tctx, fig.height = 8.5}
+eset.t <- eset.auto[, eset.auto$tissue == "TCTX"]
+sampleNames(eset.t) <- eset.t$individual
+ggaffy_scatgrid(eset.t)
 ```
