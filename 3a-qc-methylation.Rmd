@@ -152,6 +152,7 @@ thresh <- mean(ref.comps$dev) + (sd(ref.comps$dev) * 2)
 
 # Table of outlier samples
 ref.comps$outlier <- ifelse(ref.comps$dev > thresh, TRUE, FALSE)
+ref.comps <- arrange(ref.comps, desc(dev))
 print_xtable(subset(ref.comps, outlier, select = -outlier), col.names = TRUE)
 
 # Export comparisons
