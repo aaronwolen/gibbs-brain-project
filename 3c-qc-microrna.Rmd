@@ -16,10 +16,10 @@ opts_knit$set(upload.fun = function(file,
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
-  cache=FALSE, fig.width=8.5, fig.height=5, dpi=150)
+  cache=TRUE, autodep=TRUE, fig.width=8.5, fig.height=5, dpi=150)
 ```
 
-```{r load-libraries, message=FALSE}
+```{r load-libraries, message=FALSE, cache=FALSE}
 library(affy)
 library(ggplot2)
 library(plyr)
