@@ -5,6 +5,19 @@ library(Biobase)
 load("data/eset-exp.rda")
 
 
+# Filter samples based on qc analysis -------------------------------------
+
+# Remove samples squared median deviations 2 SD's above the mean
+ref.comps <- read.csv("figures/qc-expression/mrna-median-ref-comparisons.csv",
+                      stringsAsFactors = FALSE)
+
+outlier <- sampleNames(eset.exp) %in% ref.comps$sample[ref.comps$outlier]
+cat("Removed", sum(outlier),
+    "samples deemed outliers based on their deviations from the tissue-median.\n")
+
+eset.exp <- eset.exp[, !outlier]
+rm(list = c("ref.comps", "outlier"))
+
 # Sample filters ----------------------------------------------------------
 
 # Remove samples with an excessive number of negative probes.
