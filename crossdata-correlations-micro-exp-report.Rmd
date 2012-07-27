@@ -166,8 +166,8 @@ while(length(probe.plots) < 50) {
     next()
   }
   
-  m.probe <- sig.cors$micro[i]
-  e.probe <- sig.cors$exp[i]
+  m.probe <- as.character(sig.cors$micro[i])
+  e.probe <- as.character(sig.cors$exp[i])
 
   probe.df <- data.frame(sample = sampleNames(eset.exp),
     tissue = eset.exp$tissue,
