@@ -78,8 +78,7 @@ Explore and visualize correlation results generated between the microRNA and mRN
 
 
 ## Methods
-
-The analysis was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. mRNA expression levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis. microRNA expression levels were not adjusted.
+The analysis was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. mRNA and microRNA expression levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis.
 
 microRNA probes were included in this analysis only if the mature microRNA target symbols were present in the mirbase database provided by the `RmiR.hsa` package. This database was used to putative targets for each microRNA. Correlations were calculated between each microRNA and all putative targets listed in the mirbase database, overlap was determined using Entrez IDs. 
 
