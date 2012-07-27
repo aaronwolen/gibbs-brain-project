@@ -151,8 +151,20 @@ ggplot(data.frame(sig.cors,
 pdata.cols <- c("geo", "individual", "gender")
 pdata <- rbind(pData(eset.exp)[, pdata.cols], pData(eset.micro)[, pdata.cols])
 
-probe.plots <- list()
-for(i in 1:50) {
+# Vector of microRNA/mRNA probe ids
+sig.cors$id <- with(sig.cors, paste(exp, micro, sep = "-"))
+
+probe.plots <- list(); i <- 0
+
+while(length(probe.plots) < 50) {  
+  
+  i <- i + 1
+  cur.id  <- sig.cors$id[i]
+  
+  # Skip current correlation is its been previously plotted
+  if(cur.id %in% names(probe.plots)) {
+    next()
+  }
   
   m.probe <- sig.cors$micro[i]
   e.probe <- sig.cors$exp[i]
@@ -173,7 +185,7 @@ for(i in 1:50) {
   probe.df <- reshape2::dcast(probe.df, 
     individual + gender + tissue ~ assay, value.var = "expression")
   
-  probe.plots[[paste(m.probe, e.probe, sep = "-")]] <- ggplot(probe.df) +
+  probe.plots[[cur.id]] <- ggplot(probe.df) +
     aes(x = microRNA, y = mRNA) +
     geom_point(aes(color = gender), alpha = 0.5) +
     geom_text(aes(label = individual), color = "white", size = 0.5) +
