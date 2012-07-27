@@ -5,6 +5,7 @@
 
 library(Biobase)
 library(RmiR.hsa)
+library(org.Hs.eg.db)
 
 library(foreach)
 library(doMC)
@@ -45,6 +46,21 @@ mirs <- intersect(fData(eset.micro)$symbol, mirbase$mature_miRNA)
 
 mirbase <- subset(mirbase, mature_miRNA %in% mirs)
 
+# Add gene symbols
+mirbase$symbol <- unlist(mget(mirbase$gene_id, org.Hs.egSYMBOL, ifnotfound=NA))
+
+# Identify microRNA targets and exp probes with common entrez IDs 
+entrezs <- intersect(fData(eset.exp)$entrez, mirbase$gene_id)
+
+
+# Subset ExpressionSets by probes -----------------------------------------
+
+# Identify probes corresponding to the microRNA and putative targets
+micro.probes <- subset(fData(micro.sub), symbol %in% mirs)$id
+exp.probes <- subset(fData(exp.sub), entrez %in% entrezs)$id
+
+eset.micro <- eset.micro[micro.probes, ]
+eset.exp <- eset.exp[exp.probes, ]
 
 # Subset ExpressionSets ---------------------------------------------------
 
@@ -71,21 +87,9 @@ stopifnot(all(sampleNames(exp.sub) == sampleNames(micro.sub)))
 
 
 # Extract expression matrices ---------------------------------------------
+exp.mat <- t(exprs(exp.sub))
+micro.mat <- t(exprs(micro.sub))
 
-exp.mat <- exprs(exp.sub)
-micro.mat <- exprs(micro.sub)
-
-# Identify microRNA targets and exp probes with common entrez IDs 
-entrezs <- intersect(fData(exp.sub)$entrez, mirbase$gene_id)
-
-# Identify probes corresponding to the microRNA and putative targets
-micro.probes <- subset(fData(micro.sub), symbol %in% mirs)$id
-exp.probes <- subset(fData(exp.sub), entrez %in% entrezs)$id
-
-
-# Transpose matrices for correlation analysis -----------------------------
-exp.mat <- t(exp.mat)
-micro.mat <- t(micro.mat)
 
 # Correlate expression/methylation residuals ------------------------------
 
