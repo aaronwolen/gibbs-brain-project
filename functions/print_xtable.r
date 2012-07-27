@@ -27,6 +27,12 @@ print_xtable <- function(x, col.names, display) {
     add.colnames <- FALSE
   }
   
-  print(x, type = "html", 
-        include.colnames = ifelse(add.colnames, TRUE, FALSE))
+  out <- print.xtable(x, type = "html", 
+        include.colnames = ifelse(add.colnames, TRUE, FALSE),
+        print.results = FALSE)
+  
+  # Add missing semicolon to html symbols
+  out <- gsub("(&\\w+)", "\\1;", out)
+  
+  return(out)
 }
