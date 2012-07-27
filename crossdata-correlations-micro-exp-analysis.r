@@ -124,8 +124,8 @@ cors.df <- foreach(m = mirs, .combine = "rbind") %dopar% {
 }
 
 # Rename and reoder
-names(cors.df) <- c("micorna", "symbol", "micro", "exp", "r", "n")
-cors.df <- cors.df[, c("micorna", "symbol", "micro", "exp", "n", "r")]
+names(cors.df) <- c("microrna", "symbol", "micro", "exp", "r", "n")
+cors.df <- cors.df[, c("microrna", "symbol", "micro", "exp", "n", "r")]
 
 # Calculate p-values
 cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, cors.df$n)

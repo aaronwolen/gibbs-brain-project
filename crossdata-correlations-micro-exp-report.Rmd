@@ -194,7 +194,7 @@ while(length(probe.plots) < 50) {
     stat_smooth(method = "lm") +
     xlab(paste("microRNA expression", " (", m.probe, ")", sep = "")) +
     ylab(paste("mRNA expression", " (",  e.probe, ")", sep = "")) +
-    opts(title = paste(sig.cors$symbol[i], "/", sig.cors$micorna[i], 
+    opts(title = paste(sig.cors$symbol[i], "/", sig.cors$microrna[i], 
       " (", tolower(sig.cors$tissue[i]), 
       " cor = ", round(sig.cors$r[i], 2), ")", sep = ""))
 }
