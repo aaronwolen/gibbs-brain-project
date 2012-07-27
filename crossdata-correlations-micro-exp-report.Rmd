@@ -176,6 +176,7 @@ for(i in 1:50) {
   probe.plots[[paste(m.probe, e.probe, sep = "-")]] <- ggplot(probe.df) +
     aes(x = microRNA, y = mRNA) +
     geom_point(aes(color = gender), alpha = 0.5) +
+    geom_text(aes(label = individual), color = "white", size = 0.5) +
     geom_rug(alpha = 0.5) +
     facet_wrap(~tissue, ncol = 2)  +
     stat_smooth(method = "lm") +
