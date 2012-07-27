@@ -132,12 +132,21 @@ ggplot(subset(cors.df, micro %in% mean.pvals$micro[1:40])) +
 ```
 
 
-
-```{r examine-sig-probes, include=FALSE}
-
-# Produce visualizations for individual probes with largest correlations
+### Positive vs negative correlations
+```{r count-sig-correlations, fig.width=5, fig.height=3}
 sig.cors <- subset(cors.df, qvalue < .05)
 sig.cors <- arrange(sig.cors, qvalue)
+
+ggplot(data.frame(sig.cors, 
+  dir = ifelse(sig.cors$r > 0, "positive", "negative"))) + 
+  geom_bar(aes(x = tissue, fill = dir), position = position_dodge()) +
+  ylab("Correlation count (q-value < 0.05)") + 
+  guides(fill = guide_legend(title = "correlation\ndirection"))
+```
+
+
+```{r sig-probes-scatterplots, include=FALSE}
+# Produce visualizations for individual probes with largest correlations
 
 # Phenotype data for plots
 pdata.cols <- c("geo", "individual", "gender")
