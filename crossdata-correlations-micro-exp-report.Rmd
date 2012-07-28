@@ -132,6 +132,8 @@ ggplot(subset(cors.df, micro %in% mean.pvals$micro[1:40])) +
 
 
 ### Positive vs negative correlations
+In all tissues the number of positive correlations exceeded that of negative correlations. 
+
 ```{r count-sig-correlations, fig.width=5, fig.height=3}
 sig.cors <- subset(cors.df, qvalue < .05)
 sig.cors <- arrange(sig.cors, qvalue)
@@ -143,6 +145,9 @@ ggplot(data.frame(sig.cors,
   guides(fill = guide_legend(title = "correlation\ndirection"))
 ```
 
+
+### Scatter plots
+Scatter plots for the 50 most significant microRNA/mRNA correlations are provided [here](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/crossdata-correlations-micro-exp/cors-micro-exp-top-probes.pdf).
 
 ```{r sig-probes-scatterplots, include=FALSE}
 # Produce visualizations for individual probes with largest correlations
