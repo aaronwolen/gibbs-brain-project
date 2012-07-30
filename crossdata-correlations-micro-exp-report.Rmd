@@ -50,7 +50,8 @@ opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache=TRUE, autodep=TRUE, fig.width=5, fig.height=4, dpi=150)
 ```
 
-```{r load-libraries}
+```{r load-libraries, cache=FALSE, message=FALSE}
+library(Biobase)
 library(grid)
 library(plyr)
 library(ggplot2)
