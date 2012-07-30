@@ -41,13 +41,13 @@ fig.prefix <- "cors-micro-exp-"
 
 dir.create(fig.dir, showWarnings = FALSE)
 
-opts_knit$set(upload.fun = function(file, 
-  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+# opts_knit$set(upload.fun = function(file, 
+#   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
-  cache=FALSE, fig.width=5, fig.height=4, dpi=150)
+  cache=TRUE, autodep=TRUE, fig.width=5, fig.height=4, dpi=150)
 ```
 
 ```{r load-libraries}
@@ -219,5 +219,4 @@ pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
 temp <- lapply(probe.plots, print)
 dev.off()
 ```
-
 
