@@ -31,8 +31,12 @@ print_xtable <- function(x, col.names, display) {
         include.colnames = ifelse(add.colnames, TRUE, FALSE),
         print.results = FALSE)
   
+  # Strip out html comments and trailing newline
+  out <- gsub("<!.*-->", "", out)
+  out <- gsub("^\n|\n$", "", out)
+  
   # Add missing semicolon to html symbols
   out <- gsub("(&\\w+)", "\\1;", out)
   
-  return(out)
+  cat(out)
 }
