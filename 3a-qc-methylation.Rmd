@@ -76,7 +76,7 @@ qplot(data = fData(eset.meth), x =  na.count, geom = "density",
 
 ```{r na-count-probes-table, results='asis'}
 print_xtable(arrange(fData(eset.meth), 
-  desc(na.count))[1:10, c("id", "symbol", "na.count")], col.names = TRUE)
+  desc(na.count))[1:10, c("id", "symbol", "na.count")])
 ```
 
 
@@ -153,7 +153,7 @@ thresh <- mean(ref.comps$dev) + (sd(ref.comps$dev) * 2)
 # Table of outlier samples
 ref.comps$outlier <- ifelse(ref.comps$dev > thresh, TRUE, FALSE)
 ref.comps <- arrange(ref.comps, desc(dev))
-print_xtable(subset(ref.comps, outlier, select = -outlier), col.names = TRUE)
+print_xtable(subset(ref.comps, outlier, select = -outlier))
 
 # Export comparisons
 write.csv(ref.comps, paste(file.path(fig.dir, fig.prefix), 

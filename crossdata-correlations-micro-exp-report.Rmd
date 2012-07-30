@@ -41,8 +41,8 @@ fig.prefix <- "cors-micro-exp-"
 
 dir.create(fig.dir, showWarnings = FALSE)
 
-# opts_knit$set(upload.fun = function(file, 
-#   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
@@ -95,7 +95,7 @@ results.table <- ddply(cors.df, .(tissue), summarise,
   'p-value < 0.05' = sum(pvalue < 0.05),
   'q-value < 0.05' = sum(qvalue < 0.05))
 
-print_xtable(results.table, col.names = TRUE)
+print_xtable(results.table)
 ```
 
 ### Histograms
@@ -139,7 +139,8 @@ tissues <- c("CRBLM" = "Cerebellum", "FCTX" = "Frontal cortex",
 
 for(t in seq_along(tissues)) {
   cat("\n####", tissues[t], "\n")
-  print_xtable(subset(mir.counts, tissue == names(tissues)[t])[1:10,])
+  cur.t <- names(tissues)[t]
+  print_xtable(subset(mir.counts, tissue == cur.t, select = -tissue)[1:10,])
 }
 ```
 

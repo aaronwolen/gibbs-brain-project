@@ -61,7 +61,7 @@ results.table <- ddply(t.results, .(tissue), summarise,
   'p-value < 0.05' = sum(p.value < 0.05),
   'q-value < 0.1' = sum(q.value < 0.1))
 
-print_xtable(results.table, col.names = TRUE)
+print_xtable(results.table)
 ```
 
 ### Volcano plot
@@ -114,7 +114,7 @@ sig.dm.cors - dm.cors
 
 As shown in the table below, cg15915418's differential methylation results clearly make it an outlier, especially when compared to the range of p-values for all other probes (voclano plot, above).
 ```{r results-cg15915418, results='asis'}
-print_xtable(subset(t.results, id == "cg15915418"), col.names = TRUE,
+print_xtable(subset(t.results, id == "cg15915418"),
   display = c("p.value" = "e", "q.value" = "e"))
 ```
 

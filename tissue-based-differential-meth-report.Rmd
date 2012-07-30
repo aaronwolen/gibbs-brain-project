@@ -58,7 +58,7 @@ results.table <- ddply(t.results, .(pair), summarise,
   'p-value < 0.05' = sum(p.value < 0.05, na.rm = TRUE),
   'q-value < 0.1' = sum(q.value < 0.1, na.rm = TRUE))
 
-print_xtable(results.table, col.names = TRUE)
+print_xtable(results.table)
 ```
 
 ### Volcano plot
