@@ -5,6 +5,8 @@
 print_xtable <- function(x, display, col.names = TRUE, row.names = FALSE) {
   require(xtable, quietly = TRUE)
   
+  dimname.msg <- "must either be logical or a character vector of length equal to the number of columns in x.\n"
+  
   if(class(x) != "data.frame") {
     x <- data.frame(x)
   }
@@ -18,24 +20,26 @@ print_xtable <- function(x, display, col.names = TRUE, row.names = FALSE) {
     display(x) <- c("s", x.display)
   }
   
-  if(!missing(col.names)) {
-    if(is.logical(col.names)) {
-      add.colnames <- col.names
-    } else {
-      colnames(x) <- col.names 
-    }
+  if(is.logical(col.names)) {
+    add.colnames <- col.names
   } else {
-    add.colnames <- FALSE
+    add.colnames <- TRUE
+    if(length(col.names) == ncol(x)) {
+      colnames(x) <- col.names
+    } else {
+      warning("col.names ", dimname.msg, call. = FALSE)
+    }
   }
   
-  if(!missing(row.names)) {
-    if(is.logical(row.names)) {
-      add.rownames <- row.names
-    } else {
-      rownames(x) <- row.names
-    }
+  if(is.logical(row.names)) {
+    add.rownames <- row.names
   } else {
-    add.rownames <- FALSE
+    add.rownames <- TRUE
+    if(length(row.names) == nrow(x)) {
+      rownames(x) <- row.names
+    } else {
+      warning("row.names ", dimname.msg, call = FALSE)
+    }
   }
   
   out <- print.xtable(x, type = "html", 
