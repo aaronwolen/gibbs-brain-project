@@ -114,29 +114,39 @@ ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(r.hist, p.hist))
 ```
 
 
-```{r, eval=FALSE}
-# Summarize p-values by microRNA probe
-mean.pvals <- ddply(cors.df, .(tissue, micro), .progress = "text", summarise,
-  mean.abs.cor = mean(abs(r)), mean.pvalue = mean(pvalue))
+### Frequency of significant microRNA correleations
+A subset of microRNAs are correlated with very large lists of genes. The following figure summarizes the number of significant correlations associated with individual microRNAs. The tables below provide for each tissue the ten microRNAs associated with the largest number of significant correlations. 
 
-mean.pvals <- arrange(mean.pvals, mean.pvalue)
+```{r count-correlations, fig.width=5, fig.height=3}
+sig.cors <- subset(cors.df, qvalue < .05)
+sig.cors <- arrange(sig.cors, qvalue)
 
-ggplot(mean.pvals) + aes(x = tissue, y = micro, fill = -log10(mean.pvalue)) +
-  geom_tile()
+mir.counts <- with(sig.cors, tapply(microrna, tissue, table))
+mir.counts <- lapply(mir.counts, as.data.frame.table)
+mir.counts <- reshape2::melt(mir.counts, id.vars = c("Var1", "Freq"))
+names(mir.counts) <- c("microrna", "count", "tissue")
+mir.counts <- arrange(mir.counts, tissue, desc(count))
 
-ggplot(subset(cors.df, micro %in% mean.pvals$micro[1:40])) +
-  aes(x = micro, y = -log10(pvalue)) +
-  geom_boxplot()
+ggplot(mir.counts) + aes(x = tissue, y = count) + geom_boxplot() +
+  ylab("microRNA correlations count (q-value < 0.05)")
+```
 
+
+```{r count-correlations-tables, results='asis'}
+tissues <- c("CRBLM" = "Cerebellum", "FCTX" = "Frontal cortex", 
+   "TCTX" = "Temporal cortex", "PONS" = "Pons")
+
+for(t in seq_along(tissues)) {
+  cat("\n####", tissues[t], "\n")
+  print_xtable(subset(mir.counts, tissue == names(tissues)[t])[1:10,])
+}
 ```
 
 
 ### Positive vs negative correlations
 In all tissues the number of positive correlations exceeded that of negative correlations. 
 
-```{r count-sig-correlations, fig.width=5, fig.height=3}
-sig.cors <- subset(cors.df, qvalue < .05)
-sig.cors <- arrange(sig.cors, qvalue)
+```{r count-correlations-direction, fig.width=5, fig.height=3}
 
 ggplot(data.frame(sig.cors, 
   dir = ifelse(sig.cors$r > 0, "positive", "negative"))) + 
