@@ -1,0 +1,212 @@
+# Individual variation in methylation levels within tissues
+
+```{r setup, include=FALSE}
+# source("functions/knit_wiki.r")
+# knit_wiki("individual-variation-meth.Rmd", output.filename = "Individual variation in methylation levels.md")
+
+report.title <- "individual-variation-meth"
+fig.dir <- file.path("figures", report.title)
+fig.prefix <- "meth-var-"
+
+dir.create(fig.dir, showWarnings = FALSE)
+
+# opts_knit$set(upload.fun = function(file, 
+#   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+
+opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+  cache.path = paste(".cache-", report.title, "/", sep = ""),
+  echo=FALSE, results = 'hide',
+  cache=FALSE, autodep=TRUE, fig.width=5, fig.height=4, dpi=150)
+```
+
+```{r load-libraries, cache=FALSE, message=FALSE}
+library(plyr)
+library(reshape2)
+
+library(ggaffy)
+library(ggplot2)
+library(grid)
+
+source("functions/save-figures.r")
+source("functions/plot_matrix.r")
+source("functions/heat_matrix.r")
+```
+
+```{r load-data, cache=FALSE, message=FALSE}
+source("4b-load-meth-data.r")
+
+fData(eset.meth) <- transform(fData(eset.meth), 
+  distance.to.tss = as.numeric(distance.to.tss))
+```
+
+Individual variation in CpG methylation was observed by calculating each probe's SD across all samples within a tissue.
+
+## Probe variation across individuals
+As the shown in the figures below, the distrubtions of probe SDs are comparable across tissues, although variation is highest in the cerebellum. As expected, variation is much lower for probes targetting loci within CpG islands. 
+
+```{r probe-sd-distributions, warning=FALSE}
+
+# Calculate summary statistics for each probe, within tissue
+probe_summary <- function(x, tissue) {
+  out <- data.frame(id = rownames(x), tissue = tissue,
+    mean = rowMeans(x, na.rm = TRUE), 
+    median = rowMedians(x, na.rm = TRUE),
+    sd = apply(x, 1, sd))
+  return(out)
+}
+
+probe.df <- list()
+for(t in levels(eset.meth$tissue)) {
+  probe.df[[t]] <- probe_summary(exprs(eset.meth[, eset.meth$tissue == t]), t)
+}
+
+probe.df <- data.frame(do.call("rbind", probe.df), row.names = NULL)
+
+# Annotate probe summaries
+f.cols <- c("id", "chr", "color.channel", "symbol", 
+  "range.start", "distance.to.tss", "cpg.island")
+
+probe.df <- merge(fData(eset.meth)[, f.cols], probe.df, by = "id", all.x = F)
+probe.df$autosome <- ifelse(probe.df$chr %in% 1:22, TRUE, FALSE)
+
+# Density histogram of probe variation across tissues
+sd.hist <- ggplot(probe.df) + 
+  aes(x = sd, color = tissue) +
+  geom_density(alpha = .5) +
+  xlab("Probe SD") + opts(legend.position = "top")
+
+sd.bp <- ggplot(probe.df) + 
+  aes(x = tissue, y = sd, fill = cpg.island) +
+  geom_boxplot(outlier.size = 1) +
+  ylab("Probe SD") +
+  opts(legend.position = "top")
+
+ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(sd.hist, sd.bp))
+```
+
+## Comparison of methylation variation across tissues
+
+The following plot includes only autosomal probes. 
+```{r probe-sd-tissue-pairs, fig.height=5, warning=FALSE}
+probe.mat <- dcast(probe.df, id ~ tissue, value.var = "sd")
+probe.mat <- merge(fData(eset.meth)[, f.cols], probe.mat, by = "id", all.x = F)
+
+probe.mat <- arrange(probe.mat, desc(cpg.island))
+```
+
+Pairwise correlations among tissues:
+```{r probe-sd-tissue-correlations}
+heat_matrix(cor(probe.mat[,levels(eset.meth$tissue)], use = "pairwise"),
+            symmetric = TRUE)
+```
+
+
+## Methylation variation as a function of TSS distance
+
+```{r tss-distance, warning=FALSE}
+
+# Bin distance.to.tss
+tss.range <- range(pretty(fData(eset.meth)$distance.to.tss))
+tss.breaks <- seq(tss.range[1], tss.range[2], 25)
+tss.axis <- seq(min(tss.breaks), max(tss.breaks), 100)
+
+# Add bins to fdata
+fData(eset.meth)$tss.bin <- cut(fData(eset.meth)$distance.to.tss, 
+  breaks = tss.breaks, labels = F)
+
+# Convert to factor
+fData(eset.meth)$tss.bin <- factor(fData(eset.meth)$tss.bin, 
+  levels = sort(unique(fData(eset.meth)$tss.bin)),
+  labels = tail(tss.breaks, -1))
+
+# Add to probe.df
+probe.df$tss.bin <- fData(eset.meth)$tss.bin[match(probe.df$id, 
+  fData(eset.meth)$id)]
+  
+ggplot(subset(probe.df, !is.na(tss.bin))) + 
+  aes(x = tss.bin, y = sd, color = tissue, group = tissue) +
+  stat_summary(fun.y = mean, geom = "line") +
+  stat_summary(fun.data = mean_cl_boot, geom = "pointrange") +
+  scale_x_discrete(breaks = tss.axis, labels = tss.axis) +
+  facet_grid(cpg.island ~., labeller = label_both) +
+  xlab("Distance from TSS (nt)") + ylab("CpG methylation") +
+  opts(legend.position = "top",
+    axis.text.x = theme_text(angle = 90, colour = "grey50", hjust = 1, 
+                             size = base_size * 0.8))
+```
+
+
+
+```{r individual-probe-plots, eval=FALSE}
+# Pairs plot of methylation probes across tissues
+plot.df <- get_eset_data(eset.meth, probesets = "cg14159672", shape = "long")
+
+plot.df <- dcast(plot.df,
+  tissuebank + batch + age + gender + individual ~ tissue, 
+  value.var = "expression")
+ 
+plot_matrix(plot.df, facet.vars = levels(eset.meth$tissue), 
+  mapping = aes(color = age, shape = gender), size = 2, alpha = 0.5)
+```  
+
+
+##  Variation in GABA receptor methylation
+
+```{r gaba-data}
+# Identify probes targeting gaba receptor genes
+gaba.probes <- featureNames(eset.meth)[grep("GABR",fData(eset.meth)$symbol)]
+
+# Construct gaba receptor methylation data.frame 
+gaba.df <- get_eset_data(eset.meth, probesets = gaba.probes, shape = "long")
+
+gaba.df$symbol <- factor(gaba.df$symbol, 
+  levels = sort(as.character(unique(gaba.df$symbol))))
+
+# Nice labels for the different subunits
+gaba.df$subunit <- factor(gsub("(GABR\\w{1}).*", "\\1", gaba.df$symbol))
+```
+
+### GABA receptor boxplot
+```{r gabar-boxplot, fig.width=8.5, warning=FALSE}
+ggplot(gaba.df) +
+  aes(x = id, y = expression, fill = subunit) +
+  geom_boxplot(outlier.size = 1) + 
+  ylab("Methylation") +
+  facet_grid(tissue ~ subunit, scales = "free_x", space = "free_x") + 
+  opts(legend.position = "none",
+    axis.text.x = theme_text(angle = 90, colour = "grey50", hjust = 1, 
+                                size = base_size * 0.8))
+```
+
+### Clustering of GABA receptors
+The following heatmaps were constructed by performing average hierarchical clustering of GABA receptors using Pearson's correlate distance. GABA receptor genes are colored by subtype.
+
+```{r gabar-heatmap, fig.width=8.5, fig.height=8}
+# Generate clustered heatmap gaba receptors for each tissue
+gaba.hms <- list()
+
+for(t in levels(eset.meth$tissue)) {
+  eset.sub <- eset.meth[, eset.meth$tissue == t]
+  
+  # Add GABR classes
+  fData(eset.sub)$GABA <- gsub("(GABR\\w{1}).*", "\\1", fData(eset.sub)$symbol)
+  fData(eset.sub)$GABA <- factor(fData(eset.sub)$GABA)
+
+  # Only include samples with no missing values
+  samples <- apply(exprs(eset.sub)[gaba.probes,], 2, function(x) sum(is.na(x)))
+  samples <- sampleNames(eset.sub)[which(samples == 0)]
+
+  gaba.hm <- ggaffy_clustmat(eset.sub, what = "rows",
+    samples = samples, probesets = gaba.probes, color = "GABA")
+
+    # Swap probesets for symbols
+    gaba.hm <- gaba.hm + 
+      scale_x_discrete(breaks = gaba.df$probeset, labels = gaba.df$symbol) +
+      scale_y_discrete(breaks = gaba.df$probeset, labels = gaba.df$symbol) +
+      scale_fill_gradient2(midpoint = 1) +
+      opts(title = t, legend.position = "none")
+    gaba.hms[[t]] <- gaba.hm
+}
+
+ggaffy:::ggaffy_layout(2, 2, gaba.hms)
+```
