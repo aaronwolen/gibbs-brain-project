@@ -103,9 +103,9 @@ opts(legend.position = "top",
 ```
 
 Pairwise correlations among tissues:
-```{r probe-sd-tissue-correlations}
+```{r probe-sd-tissue-correlations, fig.width = 4, fig.height = 3}
 heat_matrix(cor(probe.mat[,levels(eset.meth$tissue)], use = "pairwise"),
-            symmetric = TRUE)
+            symmetric = TRUE, font.size = 3)
 ```
 
 
