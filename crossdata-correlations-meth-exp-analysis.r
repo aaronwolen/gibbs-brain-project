@@ -9,7 +9,6 @@ library(Biobase)
 library(foreach)
 library(doMC)
 
-source("functions/lm_eset.r")
 
 # Read in command line arguments ------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
@@ -30,10 +29,9 @@ n.cores <- multicore:::detectCores()
 registerDoMC(n.cores)
 
 
-# Load data ---------------------------------------------------------------
-source("4a-load-exp-data.r")
-source("4b-load-meth-data.r")
-
+# Load adjusted data ------------------------------------------------------
+load("data/crossdata-correlations-meth-exp/eset-exp-adjusted.rda")
+load("data/crossdata-correlations-meth-exp/eset-meth-adjusted.rda")
 
 # Subset ExpressionSets ---------------------------------------------------
 
@@ -56,7 +54,7 @@ sampleNames(meth.sub) <- meth.sub$individual
 
 # Reorder second dataset to match first
 meth.sub <- meth.sub[, sampleNames(exp.sub)]
-stopifnot(sampleNames(exp.sub) == sampleNames(meth.sub))
+stopifnot(all(sampleNames(exp.sub) == sampleNames(meth.sub)))
 
 
 # Extract expression matrices ---------------------------------------------
@@ -74,19 +72,11 @@ exp.probes <- subset(fData(exp.sub), symbol %in% genes)$id
 cat("Identified", length(meth.probes), "methylation probes and ", length(exp.probes),
     "corresponding to the", length(genes), "present in both datasets.\n")
 
-# Correct expression for technical variables ------------------------------
 
-# Setting lm_eset's use argument = "pairwise.complete" causes it to loop through
-# probes so missing values are be handled on a case by case basis. The result
-# is a matrix of residuals.
+# Extract expression matrices ---------------------------------------------
+exp.mat <- t(exprs(exp.sub))
+meth.mat <- t(exprs(meth.sub))
 
-meth.mat <- lm_eset(~ age + tissuebank, eset = meth.sub, 
-  probesets = meth.probes, use = "pairwise.complete", resid.only = TRUE)
-meth.mat <- t(meth.mat)
-  
-exp.mat <- lm_eset(~ age + tissuebank, eset = exp.sub, 
-  probesets = exp.probes, use = "pairwise.complete", resid.only = TRUE)
-exp.mat <- t(exp.mat)
 
 # Correlate expression/methylation residuals ------------------------------
 
