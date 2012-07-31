@@ -83,9 +83,12 @@ Explore and visualize correlations results generated between the expression and 
 
 ## Methods
 
-The analysis was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. Methylation levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis. 
+The analysis was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. Methylation and mRNA expression levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis. 
 
 Correlations were calculated using the standard `cor` function and with use set to `"pairwise.complete"`. P-values were obtained using the `WGCNA` package's `corPvalueStudent` function and multiple testing corrections were performed using the Benjamini & Hochberg method for generating q-values.
+
+### Outlier exclusion
+This analysis was re-run after removing samples from the methylation and mRNA expression data that showed extreme deviations from a median-generated reference sample. Removing these outliers made very little difference in the number of significant correlations compared with the original results, which can be obtained from commit [228c11a](https://github.com/aaronwolen/gibbs-brain-project/commit/228c11a5378d263bf3b033876c75fc89349262f7#results/crossdata-meth-exp-correlations.csv).
 
 ## Results
 
@@ -131,11 +134,23 @@ sig.cors <- arrange(sig.cors, qvalue)
 pdata.cols <- c("geo", "individual", "gender")
 pdata <- rbind(pData(eset.exp)[, pdata.cols], pData(eset.meth)[, pdata.cols])
 
-probe.plots <- list()
-for(i in 1:20) {
+# Vector of microRNA/mRNA probe ids
+sig.cors$id <- with(sig.cors, paste(meth, exp, sep = "-"))
+
+probe.plots <- list(); i <- 0
+
+while(length(probe.plots) < 50) {
+
+  i <- i + 1
+  cur.id  <- sig.cors$id[i]
   
-  m.probe <- sig.cors$meth[i]
-  e.probe <- sig.cors$exp[i]
+  # Skip current correlation is its been previously plotted
+  if(cur.id %in% names(probe.plots)) {
+    next()
+  }
+  
+  m.probe <- as.character(sig.cors$meth[i])
+  e.probe <- as.character(sig.cors$exp[i])
 
   probe.df <- data.frame(sample = sampleNames(eset.exp),
     tissue = eset.exp$tissue,
@@ -153,7 +168,7 @@ for(i in 1:20) {
   probe.df <- reshape2::dcast(probe.df, 
     individual + gender + tissue ~ assay, value.var = "expression")
   
-  probe.plots[[paste(m.probe, e.probe, sep = "-")]] <- ggplot(probe.df) +
+  probe.plots[[cur.id]] <- ggplot(probe.df) +
     aes(x = methylation, y = expression) +
     geom_point(aes(color = gender), alpha = 0.5) +
     geom_rug(alpha = 0.5) +
