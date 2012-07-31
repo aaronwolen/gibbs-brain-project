@@ -10,8 +10,8 @@ fig.prefix <- "meth-var-"
 
 dir.create(fig.dir, showWarnings = FALSE)
 
-opts_knit$set(upload.fun = function(file, 
-  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+# opts_knit$set(upload.fun = function(file, 
+#   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
@@ -95,10 +95,10 @@ probe.mat <- arrange(probe.mat, desc(cpg.island))
 
 plot_matrix(subset(probe.mat, chr %in% 1:22), density = TRUE, bins = 75,
   facet.vars = levels(eset.meth$tissue)) +
+xlab("Probe SD") + ylab("Probe SD") +
 opts(legend.position = "top",
   axis.text.x = theme_text(angle = 90, hjust = 1, colour = "grey50", 
-    size = base_size * 0.8),
-axis.title.x = theme_blank(), axis.title.y = theme_blank())
+    size = base_size * 0.8))
 
 ```
 
