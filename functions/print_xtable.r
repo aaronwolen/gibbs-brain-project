@@ -1,17 +1,19 @@
 # Print html tables for wiki
 #' @param display named vector indicating which display option to use for each
 #'   corresponding column
+#' @param additional arguments passed to print.xtable
 #'   
-print_xtable <- function(x, display, col.names = TRUE, row.names = FALSE) {
+print_xtable <- function(x, display, col.names = TRUE, row.names = FALSE,
+  caption = NULL, ...) {
   require(xtable, quietly = TRUE)
   
   dimname.msg <- "must either be logical or a character vector of length equal to the number of columns in x.\n"
   
-  if(class(x) != "data.frame") {
-    x <- data.frame(x)
-  }
+#   if(class(x) != "data.frame") {
+#     x <- data.frame(x)
+#   }
   
-  x <- xtable(x)
+  x <- xtable(x, caption = caption)
   
   if(!missing(display)) {
     x.display <- tail(display(x), -1)
@@ -41,11 +43,11 @@ print_xtable <- function(x, display, col.names = TRUE, row.names = FALSE) {
       warning("row.names ", dimname.msg, call = FALSE)
     }
   }
-  
+
   out <- print.xtable(x, type = "html", 
         include.colnames = add.colnames,
         include.rownames = add.rownames,
-        print.results = FALSE)
+        print.results = FALSE, ...)
   
   # Strip out html comments and trailing newline
   out <- gsub("<!.*-->", "", out)
