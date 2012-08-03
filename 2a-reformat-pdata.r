@@ -89,8 +89,9 @@ pdata <- classify_columns(pdata,
   num.cols = c("age", "pmi"), 
   fac.cols = c("tissue", "gender", "individual", "tissuebank", "batch"))
 
-levels(pdata$gender) <- c("male", "female")
-levels(pdata$individual) <- sort(as.numeric(levels(pdata$individual)))
+pdata$gender <- factor(pdata$gender, levels = c("male", "female"))
+pdata$individual <- factor(pdata$individual, 
+  levels = sort(as.numeric(levels(pdata$individual))))
 
 # Reorder
 pdata <- arrange(pdata, assay, tissue, individual)
