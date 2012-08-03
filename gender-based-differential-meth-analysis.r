@@ -3,10 +3,7 @@
 library(genefilter)
 source("functions/lm_eset.r")
 
-# Nice html table for wiki
-print_xtable <- function(x) {
-  print(xtable::xtable(x), type = "html", include.colnames = FALSE)
-}
+source("functions/print_xtable.r")
 
 # Load data ---------------------------------------------------------------
 source("4b-load-meth-data.r")
