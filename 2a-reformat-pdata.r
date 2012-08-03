@@ -28,7 +28,7 @@ pdata <- cbind(id.cols, pdata)
 pdata <- subset(pdata, select = -title)
 
 # Ensure geo_accession column provides unique identifiers
-nrow(pdata)  == length(unique(pdata$geo_accession))
+stopifnot(nrow(pdata)  == length(unique(pdata$geo_accession)))
 rownames(pdata) <- pdata$geo_accession
 
 # Ensure 'individual' column is a unique identifier within each assay/tissue
@@ -43,8 +43,8 @@ invar.pdata <- pdata[1, invariant_cols(pdata)]
 
 # Isolate other MIAME-relevant columns
 miame.cols <- c("submission_date", "molecule_ch1", "extract_protocol_ch1", 
-                "label_ch1", "label_protocol_ch1", "hyb_protocol", "scan_protocol", 
-                "data_processing", "platform_id")
+  "label_ch1", "label_protocol_ch1", "hyb_protocol", "scan_protocol", 
+  "data_processing", "platform_id")
 miame.pdata <- pdata[, miame.cols]
 
 pdata <- pdata[, setdiff(names(pdata), c(names(invar.pdata), miame.cols))]
@@ -68,7 +68,7 @@ setdiff(pdata$individual, sample.pdata$individual)
 
 missing.inds <- which(!sample.pdata$individual %in% pdata$individual)
 
-pdata <- merge(pdata, sample.pdata[, c("individual", "death")], by = "individual")
+pdata <- join(pdata, sample.pdata[, c("individual", "death")])
 
 
 # Rename and reorder columns ----------------------------------------------
@@ -139,6 +139,11 @@ fortify_miame <- function(miame, pdata) {
   return(miame)
 }
 
-miame.exp <- fortify_miame(miame, subset(miame.pdata, platform_id == gpl["exp"]))
-miame.meth <- fortify_miame(miame, subset(miame.pdata, platform_id == gpl["meth"]))
-miame.micro <- fortify_miame(miame, subset(miame.pdata, platform_id == gpl["micro"]))
+miame.exp <- fortify_miame(miame, 
+  subset(miame.pdata, platform_id == gpl["exp"]))
+
+miame.meth <- fortify_miame(miame, 
+  subset(miame.pdata, platform_id == gpl["meth"]))
+
+miame.micro <- fortify_miame(miame, 
+  subset(miame.pdata, platform_id == gpl["micro"]))
