@@ -47,7 +47,7 @@ opts_knit$set(upload.fun = function(file,
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
-  cache=TRUE, autodep=TRUE, fig.width=5, fig.height=4, dpi=150)
+  cache=FALSE, autodep=TRUE, fig.width=5, fig.height=4, dpi=150)
 ```
 
 ```{r load-libraries, cache=FALSE, message=FALSE}

@@ -56,8 +56,8 @@ entrezs <- intersect(fData(eset.exp)$entrez, mirbase$gene_id)
 # Subset ExpressionSets by probes -----------------------------------------
 
 # Identify probes corresponding to the microRNA and putative targets
-micro.probes <- subset(fData(micro.sub), symbol %in% mirs)$id
-exp.probes <- subset(fData(exp.sub), entrez %in% entrezs)$id
+micro.probes <- subset(fData(eset.micro), symbol %in% mirs)$id
+exp.probes <- subset(fData(eset.exp), entrez %in% entrezs)$id
 
 eset.micro <- eset.micro[micro.probes, ]
 eset.exp <- eset.exp[exp.probes, ]
