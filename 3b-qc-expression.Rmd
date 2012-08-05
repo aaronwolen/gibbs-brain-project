@@ -10,13 +10,13 @@ fig.prefix <- "mrna-"
 
 dir.create(fig.dir, showWarnings = FALSE)
 
-# opts_knit$set(upload.fun = function(file, 
-#  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+opts_knit$set(upload.fun = function(file, 
+ key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
-  cache=FALSE, autodep=TRUE, fig.width=8.5, fig.height=5, dpi=150)
+  cache=TRUE, autodep=TRUE, fig.width=8.5, fig.height=5, dpi=150)
 ```
 
 ```{r load-libraries, message=FALSE, cach=FALSE}
