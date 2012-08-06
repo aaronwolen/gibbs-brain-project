@@ -41,8 +41,6 @@ source("functions/plot_probe.r")
 source("4b-load-meth-data.r")
 ```
 
-## Issues
-This analysis was conducted using unadjusted methylation data. Also, I need to individually test probes with missing values as was done in the [gender-based analysis](https://github.com/aaronwolen/gibbs-brain-project/blob/master/gender-based-differential-meth.r). After doing so, warning suppression for many of the chunks can be removed and `"pairwise.complete"` no longer needs to be specified when calculating correlations. 
  
 ## Methods
 
@@ -116,6 +114,9 @@ for(i in na.ts) {
   
   t.out <- rowttests(matrix(t.data$exp, nrow = 1), fac = factor(t.data$tissue))
   t.results[i, c("statistic", "dm", "p.value")] <- t.out
+  if(any(is.na(t.results[i,]))) {
+    stop(paste(i, "produced NAs"))
+  }
 }
 
 
@@ -125,14 +126,13 @@ t.results$q.value <- unlist(
 
 
 # Export t-test results
-t.results <- arrange(t.results, q.value)
-
-write.csv(t.results, "results/tissue-based-differential-methylation.csv",
-  row.names = FALSE)
+write.csv(arrange(t.results, q.value), 
+  "results/tissue-based-differential-methylation.csv", row.names = FALSE)
 
 # Annotate t-test results
 f.cols <- c("id", "symbol", "chr", "position", "strand", "description")
-t.results <- join(fData(eset.meth)[, f.cols], t.results, by = "id")
+t.results <- merge(fData(eset.meth)[, f.cols], t.results, by = "id")
+t.results <- arrange(t.results, q.value)
 ```
 
 ## Results
