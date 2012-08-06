@@ -1,4 +1,4 @@
-.Rproj.user
+.Rproj*
 .Rhistory
 .RData
 .DS*
@@ -7,3 +7,6 @@ archive
 wiki
 
 data/crossdata-correlations-micro-exp
+data/crossdata-correlations-meth-exp
+.Rproj.user
+
