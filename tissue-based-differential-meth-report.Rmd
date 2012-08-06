@@ -1,5 +1,9 @@
 # Tissue-based methylation differences
 
+Identify loci with significantly different levels of methylation between tissue samples collected from each of the 4 brain brain regions.
+
+* results: [`tissue-based-differential-methylation.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/tissue-based-differential-methylation.csv)
+
 ```{r setup, include=FALSE}
 # source("functions/knit_wiki.r")
 # knit_wiki("tissue-based-differential-meth-report.Rmd", output.filename = "Cross-tissue methylation differences")
@@ -16,12 +20,12 @@ opts_knit$set(upload.fun = function(file,
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
-  cache=FALSE, fig.width=5, fig.height=4, dpi=150)
-
-
+  cache=TRUE, fig.width=5.5, fig.height=4, dpi=150)
 ```
 
-```{r load-libraries, message=FALSE}
+```{r load-libraries, message=FALSE, cache=FALSE}
+library(genefilter)
+
 library(plyr)
 library(reshape2)
 library(ggplot2)
@@ -35,28 +39,108 @@ source("functions/plot_probe.r")
 
 ```{r load-data, cache=FALSE}
 source("4b-load-meth-data.r")
-
-t.results <- read.csv("results/tissue-based-differential-methylation.csv",
-                      stringsAsFactors = FALSE)
 ```
-
-Explore and visualize results from the tissue-based differential methylation analysis, which sought to identify loci with significantly different levels of methylation between tissue samples collected from each of the 4 brain regions.
 
 ## Issues
 This analysis was conducted using unadjusted methylation data. Also, I need to individually test probes with missing values as was done in the [gender-based analysis](https://github.com/aaronwolen/gibbs-brain-project/blob/master/gender-based-differential-meth.r). After doing so, warning suppression for many of the chunks can be removed and `"pairwise.complete"` no longer needs to be specified when calculating correlations. 
-
-* script: [`tissue-based-differential-meth.r`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/tissue-based-differential-meth.r)
-* results: [`tissue-based-differential-methylation.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/tissue-based-differential-methylation.csv)
-
+ 
 ## Methods
-Prior to conducting the differential expression analysis, low-variance probes were filtered out by removing any probes with an experiment-wide standard deviation < 0.1. The t.test was carried out using the `rowttests` from the `genefilter` package. Multiple testing corrections were performed within each region using the Benjamini & Hochberg method for generating q-values.
+
+### Non-specific filtering
+
+```{r filter-probes}
+# Calculate SD for each probe
+fData(eset.meth)$sd <- rowSds(exprs(eset.meth), na.rm = TRUE)
+
+# Define probe inclusion threshold
+sd.thresh <- 0.1
+
+par(mar = c(4.1, 4.1, 1, 1), xaxs = "i", yaxs = "i")
+ax.lim <- c(0, max(fData(eset.meth)$sd * 1.05))
+layout(matrix(1:2, ncol = 1), heights = c(.6, .4))
+
+hist(fData(eset.meth)$sd, xlab = "", main = "", xlim = ax.lim)
+abline(v = sd.thresh, col = "red")
+
+boxplot(fData(eset.meth)$sd, horizontal = TRUE, xlab = "Probe SD", ylim = ax.lim)
+abline(v = sd.thresh, col = "red")
+
+# Vector of probes to include in differential analysis
+test.probes <- featureNames(eset.meth)[fData(eset.meth)$sd > sd.thresh]
+```
+
+Low-variance probes were filtered out prior to conducting the differential expression analysis. Only probes with an experiment-wide SD > `r sd.thresh` were included. Of the `r nrow(eset.meth)` probes, `r length(test.probes)` exceeded this threshold and were included in the analysis.
+
+### t-test
+The t.test was carried out using the `rowttests` from the `genefilter` package. Multiple testing corrections were performed within each region using the Benjamini & Hochberg method for generating q-values.
+
+```{r ttest, dependson="filter-probes"}
+tissues <- levels(eset.meth$tissue)
+
+# All combinations of tissue pairs
+pairs <- t(combn(tissues, 2))
+pair.labels <- apply(pairs, 1, paste, collapse = "-")
+
+t.results <- list()
+
+# Loop through each tissue pair and perform ttest
+for(i in seq_len(nrow(pairs))) {
+  pair.label <- paste(pairs[i, ], collapse = "-")
+  
+  # Subset for current tissue pair
+  meth.sub <- eset.meth[test.probes, eset.meth$tissue %in% pairs[i,]]
+  meth.sub$tissue <- factor(meth.sub$tissue)
+  
+  t.results[[pair.label]] <- rowttests(meth.sub, "tissue")
+  t.results[[pair.label]] <- data.frame(pair = pair.label, 
+    id = rownames(t.results[[i]]), t.results[[i]])
+}
+
+t.results <- data.frame(do.call("rbind", t.results), row.names = NULL)
+
+
+# Perform t-test individiually on probes with missing values
+na.ts <- which(is.na(t.results$statistic))
+
+pb <- txtProgressBar(max = length(na.ts), style = 3)
+for(i in na.ts) {
+  setTxtProgressBar(pb, value = which(na.ts == i))
+  tissues <- strsplit(as.character(t.results$pair[i]), split = "-")[[1]]
+  id <- as.character(t.results$id[i])
+
+  eset.sub <- eset.meth[, eset.meth$tissue %in% tissues]
+  
+  t.data <- data.frame(exp = exprs(eset.sub)[id, ], tissue = eset.sub$tissue)
+  # Remove NA values
+  t.data <- t.data[!(is.na(t.data$exp) | is.na(t.data$tissue)),]
+  
+  t.out <- rowttests(matrix(t.data$exp, nrow = 1), fac = factor(t.data$tissue))
+  t.results[i, c("statistic", "dm", "p.value")] <- t.out
+}
+
+
+# Correct for multiple testing
+t.results$q.value <- unlist(
+  with(t.results, tapply(p.value, pair, p.adjust, method = "BH")))
+
+
+# Export t-test results
+t.results <- arrange(t.results, q.value)
+
+write.csv(t.results, "results/tissue-based-differential-methylation.csv",
+  row.names = FALSE)
+
+# Annotate t-test results
+f.cols <- c("id", "symbol", "chr", "position", "strand", "description")
+t.results <- join(fData(eset.meth)[, f.cols], t.results, by = "id")
+```
 
 ## Results
 
-```{r results-table, results='asis'}
+```{r results-table, results='asis', dependson="ttest"}
 results.table <- ddply(t.results, .(pair), summarise, 
   'p-value < 0.05' = sum(p.value < 0.05, na.rm = TRUE),
-  'q-value < 0.1' = sum(q.value < 0.1, na.rm = TRUE))
+  'q-value < 0.05' = sum(q.value < 0.05, na.rm = TRUE))
 
 print_xtable(results.table)
 ```
@@ -64,11 +148,11 @@ print_xtable(results.table)
 ### Volcano plot
 Volcano plot of mean cross-tissue methylation differences plotted against raw t-test p-values. As expected, the most robust differences are observed in any of the tissue pairs that include the cerebellum, while the fewest differences exist between the two cortical regions. 
 
-```{r volcano-plot, warning=FALSE}
+```{r volcano-plot, dependson="ttest"}
 ggplot(t.results) +
   aes(x = dm, y = -log10(p.value)) +
   geom_point(size = 1) +
-  facet_wrap(~pair, ncol = 2) +
+  facet_wrap(~pair, nrow = 2) +
   xlab("Mean cross-tissue difference") + 
   ylab(expression(-log[10] * " p-value"))
 ```
@@ -77,32 +161,58 @@ ggplot(t.results) +
 ### Pairwise tissue comparisons of mean gender differences
 Pairwise comparison of tissue-based methylation differences across all tissue pairs. In all three tissue combinations that include cerebellum, the methylation differences are highly correlated. The comparisons including pons and either of the two cortical regions are also correlated (the correlation direction is a result of the order in which tissues were compared). 
 
-```{r dm-tissue-pairs, fig.width=5.5, fig.height=5.5, warning=FALSE}
-pairs <- unique(t.results$pair)
-
+```{r dm-tissue-pairs, fig.height=5.5, dependson="ttest"}
 t.dm <- dcast(t.results, id ~ pair, value.var = "dm")
 
 plot_matrix(data = t.dm, 
-  facet.vars = pairs, alpha = 0.5, size = 0.75) + 
+  facet.vars = pair.labels, alpha = 0.5, size = 0.75) + 
   stat_smooth(method = "lm") + 
   xlab("Mean tissue difference")  + ylab("Mean tissue difference") +
   coord_fixed()
 ```
 
-### Mean difference correlations across tissues
-
+#### Mean difference correlations across tissues
 The following heatmap depicts the cross-tissue correlations.
 
-```{r dm-tissue-pairs-correlations, fig.width=3.5, fig.height=2.5}
-
-dm.cors <- abs(cor(t.dm[, pairs], use = "pairwise"))
+```{r dm-tissue-pairs-correlations, fig.width=3.5, fig.height=2.5, dependson="ttest"}
+dm.cors <- abs(cor(t.dm[, pair.labels]))
 dimnames(dm.cors) <- lapply(dimnames(dm.cors), function(x) sub("-", "\n", x))
 
-heat_matrix(abs(dm.cors), symmetric = TRUE, legend.title = "cor", font.size = 3)
-
-# Limit correlations to probes with differences
-sig.probes <- unique(subset(t.results, q.value < 0.05)$id)
-sig.dm.cors <- abs(cor(subset(t.dm, id %in% sig.probes)[, pairs], use = "pairwise"))
-
-sig.dm.cors - dm.cors
+heat_matrix(dm.cors, symmetric = TRUE, legend.title = "cor", font.size = 3)
 ```
+
+### Dot plots for top probes
+Dot plots for the 10 most significant probes for each tissue pair are provided [here](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/tissue-based-meth-differences/meth-tissue-top-probes.pdf).
+
+```{r sig-probes-dotplots, include=FALSE, dependson="ttest"}
+# Identify ten most significant probes for each tissue pair
+top.probes <- melt(sapply(pair.labels, simplify = FALSE, 
+  FUN = function(x) t.results$id[t.results$pair == x][1:10]))
+names(top.probes) <- c("id", "pair")
+  
+probe.plots <- list()
+  
+for(i in 1:nrow(top.probes)) {
+  cur.probe <- as.character(top.probes$id[i])
+  cur.pair <- as.character(top.probes$pair[i])
+  
+  # Index of corresponding row in t.results 
+  r.id <- which(t.results$id == cur.probe & t.results$pair == cur.pair)
+  
+  title <- paste(cur.probe, " (", cur.pair, " q-value = ",
+    signif(t.results$q.value[r.id], 2), ")", sep = "")
+  
+  probe.plots[[cur.probe]] <- probe_dotplot(eset.meth, probe = cur.probe, 
+    x = "tissue", point.label = "individual", color = "gender") +
+  stat_summary(fun.data = function(x) mean_sdl(x, mult = 1), 
+      geom = "pointrange", color = "blue", alpha = 0.5) +
+  opts(title = title, axis.title.x = theme_blank(), legend.position = "right") +
+  guides(color = guide_legend(override.aes = list(size = 4, alpha = 1)))
+}
+  
+pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
+  width = 7, height = 6)
+temp <- lapply(probe.plots, print)
+dev.off()
+```  
+  
