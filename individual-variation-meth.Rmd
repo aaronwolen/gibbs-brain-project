@@ -10,16 +10,17 @@ fig.prefix <- "meth-var-"
 
 dir.create(fig.dir, showWarnings = FALSE)
 
-# opts_knit$set(upload.fun = function(file, 
-#   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
-  cache=FALSE, autodep=TRUE, fig.width=5, fig.height=4, dpi=150)
+  cache=TRUE, autodep=TRUE, fig.width=5, fig.height=3, dpi=150)
 ```
 
 ```{r load-libraries, cache=FALSE, message=FALSE}
+library(data.table)
 library(plyr)
 library(reshape2)
 
@@ -30,6 +31,7 @@ library(grid)
 source("functions/save-figures.r")
 source("functions/plot_matrix.r")
 source("functions/heat_matrix.r")
+source("functions/print_xtable.r")
 ```
 
 ```{r load-data, cache=FALSE, message=FALSE}
@@ -39,34 +41,51 @@ fData(eset.meth) <- transform(fData(eset.meth),
   distance.to.tss = as.numeric(distance.to.tss))
 ```
 
-Individual variation in CpG methylation was observed by calculating each probe's SD across all samples within a tissue.
+Individual variation in CpG methylation was examined by calculating each probe's SD across all samples within a tissue.
 
 ## Probe variation across individuals
 As the shown in the figures below, the distrubtions of probe SDs are comparable across tissues, although variation is highest in the cerebellum. As expected, variation is much lower for probes targetting loci within CpG islands. 
 
-```{r probe-sd-distributions, warning=FALSE}
+```{r setup-data-tables, warning=FALSE}
+# phenotype data.table for sample annotation
+p.cols <- c("geo", "tissue", "gender", "age")
+pdata <- data.table(pData(eset.meth)[, p.cols])
+setkey(pdata, geo)
 
-# Calculate summary statistics for each probe, within tissue
-probe_summary <- function(x, tissue) {
-  out <- data.frame(id = rownames(x), tissue = tissue,
-    mean = rowMeans(x, na.rm = TRUE), 
-    median = rowMedians(x, na.rm = TRUE),
-    sd = apply(x, 1, sd))
-  return(out)
-}
-
-probe.df <- list()
-for(t in levels(eset.meth$tissue)) {
-  probe.df[[t]] <- probe_summary(exprs(eset.meth[, eset.meth$tissue == t]), t)
-}
-
-probe.df <- data.frame(do.call("rbind", probe.df), row.names = NULL)
-
-# Annotate probe summaries
+# data.table for probe annotation
 f.cols <- c("id", "chr", "color.channel", "symbol", 
   "range.start", "distance.to.tss", "cpg.island")
+fdata <- data.table(fData(eset.meth)[, f.cols])
+setkey(fdata, id)
 
-probe.df <- merge(fData(eset.meth)[, f.cols], probe.df, by = "id", all.x = F)
+# Create long-format data.table of methylation data
+meth.df <- as.data.frame.table(exprs(eset.meth), stringsAsFactors = FALSE)
+names(meth.df) <- c("id", "geo", "expression")
+
+meth.df <- data.table(meth.df)
+setkey(meth.df, geo, id)
+
+# Remove NA values
+meth.df <- na.omit(meth.df, expression)
+
+# Annotate samples
+meth.df <- merge(meth.df, pdata)
+setkey(meth.df, tissue, gender, id)
+```
+
+```{r probe-sd-distributions}
+# Calculate summary statistics for each probe, within tissue
+probe.df <- meth.df[, 
+  list(mean = mean(expression), 
+       median = median(expression),
+       sd = sd(expression),
+       n = .N),
+  by = "tissue,id"]
+
+# Annotate probe summaries
+probe.df <- merge(probe.df, fdata, by = "id")
+
+# Flag autosomal probes
 probe.df$autosome <- ifelse(probe.df$chr %in% 1:22, TRUE, FALSE)
 
 # Density histogram of probe variation across tissues
@@ -88,56 +107,55 @@ ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(sd.hist, sd.bp))
 
 The following plot includes only autosomal probes. 
 ```{r probe-sd-tissue-pairs, fig.height=5, warning=FALSE}
-probe.mat <- dcast(probe.df, id ~ tissue, value.var = "sd")
-probe.mat <- merge(fData(eset.meth)[, f.cols], probe.mat, by = "id", all.x = F)
+sd.mat <- dcast(probe.df, id ~ tissue, value.var = "sd")
+sd.mat <- merge(fdata, sd.mat, by = "id", all.x = F)
 
-probe.mat <- arrange(probe.mat, desc(cpg.island))
-
-plot_matrix(subset(probe.mat, chr %in% 1:22), density = TRUE, bins = 75,
+plot_matrix(data.frame(subset(sd.mat, chr %in% 1:22)), 
+  density = TRUE, bins = 50,
   facet.vars = levels(eset.meth$tissue)) +
-xlab("Probe SD") + ylab("Probe SD") +
+xlab("SD (autosomal probes)") + ylab("SD (autosomal probes)") +
 opts(legend.position = "top",
   axis.text.x = theme_text(angle = 90, hjust = 1, colour = "grey50", 
     size = base_size * 0.8))
-
 ```
 
-Pairwise correlations among tissues:
-```{r probe-sd-tissue-correlations, fig.width = 4, fig.height = 3}
-heat_matrix(cor(probe.mat[,levels(eset.meth$tissue)], use = "pairwise"),
-            symmetric = TRUE, font.size = 3)
+
+Probe SD cross-tissue correlations:
+```{r probe-sd-tissue-correlations, fig.width=4}
+cor.mat <- cor(data.frame(sd.mat)[,levels(eset.meth$tissue)])
+heat_matrix(cor.mat, symmetric = TRUE, font.size = 3)
 ```
 
 
 ## Methylation variation as a function of TSS distance
 
-```{r tss-distance, warning=FALSE}
+The following plot shows how variability in CpG methylation changes as a function of distance to the nearest transcription start site (TSS). TSS distances were split into 100 nt bins. Each point represents the mean of SDs for all probes grouped into each of the bins plotted along the x-axis. Error bars provide the 95% confidence intervals for each bin, which were bootstrapped 1,000 times. 
+
+```{r tss-distance, warning=FALSE, fig.width=6, fig.height=4}
 
 # Bin distance.to.tss
-tss.range <- range(pretty(fData(eset.meth)$distance.to.tss))
+tss.range <- range(pretty(fdata$distance.to.tss))
 tss.breaks <- seq(tss.range[1], tss.range[2], 25)
 tss.axis <- seq(min(tss.breaks), max(tss.breaks), 100)
 
 # Add bins to fdata
-fData(eset.meth)$tss.bin <- cut(fData(eset.meth)$distance.to.tss, 
-  breaks = tss.breaks, labels = F)
+fdata$tss.bin <- cut(fdata$distance.to.tss, breaks = tss.breaks, labels = F)
 
 # Convert to factor
-fData(eset.meth)$tss.bin <- factor(fData(eset.meth)$tss.bin, 
-  levels = sort(unique(fData(eset.meth)$tss.bin)),
+fdata$tss.bin <- factor(fdata$tss.bin, 
+  levels = sort(unique(fdata$tss.bin)),
   labels = tail(tss.breaks, -1))
 
 # Add to probe.df
-probe.df$tss.bin <- fData(eset.meth)$tss.bin[match(probe.df$id, 
-  fData(eset.meth)$id)]
-  
+probe.df$tss.bin <- fdata$tss.bin[match(probe.df$id, fdata$id)]
+
 ggplot(subset(probe.df, !is.na(tss.bin))) + 
   aes(x = tss.bin, y = sd, color = tissue, group = tissue) +
   stat_summary(fun.y = mean, geom = "line") +
   stat_summary(fun.data = mean_cl_boot, geom = "pointrange") +
   scale_x_discrete(breaks = tss.axis, labels = tss.axis) +
   facet_grid(cpg.island ~., labeller = label_both) +
-  xlab("Distance from TSS (nt)") + ylab("CpG methylation") +
+  xlab("Distance to TSS (nt)") + ylab("Mean probe SD") +
   opts(legend.position = "top",
     axis.text.x = theme_text(angle = 90, colour = "grey50", hjust = 1, 
                              size = base_size * 0.8))
@@ -158,15 +176,66 @@ plot_matrix(plot.df, facet.vars = levels(eset.meth$tissue),
 ```  
 
 
+## Methylation variation as a function of age
+
+```{r create-age-groups, results='asis', message=FALSE}
+# Add age groups
+age.breaks <- quantile(pdata$age)
+pdata$age.group <- cut(pdata$age, breaks = age.breaks, include.lowest = TRUE)
+
+print_xtable(
+  with(subset(pdata, gender == "female"), table(tissue, age.group)),
+  row.names = TRUE, caption = "Number of females in each age group.", 
+  caption.placement = "top")
+
+print_xtable(
+  with(subset(pdata, gender == "male"), table(tissue, age.group)),
+  row.names = TRUE, caption = "Number of males in each age group.", 
+  caption.placement = "top")
+
+# Add age.group to meth.df
+meth.df <- merge(meth.df, pdata[, geo,age.group], by = "geo")
+
+# Calculate summary statistics for each level of the phenotype variables
+probe.df <- meth.df[, 
+  list(mean = mean(expression), 
+       median = median(expression),
+       sd = sd(expression),
+       n = .N),
+  by = "tissue,gender,age.group,id"]
+setkey(probe.df, id)
+```
+
+```{r sd-age-boxplot, fig.width=7.5, fig.height=2.5}
+ggplot(probe.df) + 
+  aes(x = age.group, y = sd) + 
+  geom_boxplot(outlier.size = 1) + 
+  xlab("Age group") + ylab("Probe SD") +
+  facet_grid(. ~ tissue)
+```
+
+## Methylation variation as a function of age and gender
+
+```{r sd-age-gender-boxplot, fig.width=7.5}
+ggplot(probe.df) + 
+  aes(x = age.group, y = sd, fill = gender) + 
+  geom_boxplot(outlier.size = 1) + 
+  xlab("Age group") + ylab("Probe SD") +
+  facet_grid(. ~ tissue) +
+  opts(legend.position = "top")
+```
+
 ##  Variation in GABA receptor methylation
 
 ```{r gaba-data}
 # Identify probes targeting gaba receptor genes
-gaba.probes <- featureNames(eset.meth)[grep("GABR",fData(eset.meth)$symbol)]
+gaba.probes <- subset(fdata, grepl("GABR", symbol))$id
+gaba.df <- meth.df[id %in% gaba.probes]
 
-# Construct gaba receptor methylation data.frame 
-gaba.df <- get_eset_data(eset.meth, probesets = gaba.probes, shape = "long")
+# Annotate gaba probes
+gaba.df <- merge(gaba.df, fdata, by = "id")
 
+# Convert gaba symbols to ordered factor
 gaba.df$symbol <- factor(gaba.df$symbol, 
   levels = sort(as.character(unique(gaba.df$symbol))))
 
@@ -175,7 +244,7 @@ gaba.df$subunit <- factor(gsub("(GABR\\w{1}).*", "\\1", gaba.df$symbol))
 ```
 
 ### GABA receptor boxplot
-```{r gabar-boxplot, fig.width=8.5, warning=FALSE}
+```{r gabar-boxplot, fig.width=7.5, fig.height=5, warning=FALSE}
 ggplot(gaba.df) +
   aes(x = id, y = expression, fill = subunit) +
   geom_boxplot(outlier.size = 1) + 
@@ -189,7 +258,7 @@ ggplot(gaba.df) +
 ### Clustering of GABA receptors
 The following heatmaps were constructed by performing average hierarchical clustering of GABA receptors using Pearson's correlate distance. GABA receptor genes are colored by subtype.
 
-```{r gabar-heatmap, fig.width=8.5, fig.height=8}
+```{r gabar-heatmap, fig.width=7.5, fig.height=7}
 # Generate clustered heatmap gaba receptors for each tissue
 gaba.hms <- list()
 
@@ -209,8 +278,8 @@ for(t in levels(eset.meth$tissue)) {
 
     # Swap probesets for symbols
     gaba.hm <- gaba.hm + 
-      scale_x_discrete(breaks = gaba.df$probeset, labels = gaba.df$symbol) +
-      scale_y_discrete(breaks = gaba.df$probeset, labels = gaba.df$symbol) +
+      scale_x_discrete(breaks = gaba.df$id, labels = gaba.df$symbol) +
+      scale_y_discrete(breaks = gaba.df$id, labels = gaba.df$symbol) +
       scale_fill_gradient2(midpoint = 1) +
       opts(title = t, legend.position = "none")
     gaba.hms[[t]] <- gaba.hm
