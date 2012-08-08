@@ -1,0 +1,150 @@
+# Correlation of CpG methylation levels across tissues 
+
+```{r setup, include=FALSE}
+# source("functions/knit_wiki.r")
+# knit_wiki("crosstissue-correlations-meth-report.Rmd", output.filename = "Cross tissue methylation correlations")
+
+report.title <- "crosstissue-correlations-meth"
+fig.dir <- file.path("figures", report.title)
+fig.prefix <- "cors-meth-"
+
+dir.create(fig.dir, showWarnings = FALSE)
+
+# opts_knit$set(upload.fun = function(file, 
+#   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+
+opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+  cache.path = paste(".cache-", report.title, "/", sep = ""),
+  echo=FALSE, results = 'hide',
+  cache=FALSE, fig.width=5.5, fig.height=4, dpi=150)
+```
+
+```{r load-libraries, message=FALSE}
+library(Biobase)
+
+library(grid)
+library(plyr)
+library(ggplot2)
+library(reshape2)
+ 
+source("functions/print_xtable.r")
+source("functions/save-figures.r")
+source("functions/plot_matrix.r")
+source("functions/heat_matrix.r")
+```
+
+```{r load-data, cache=FALSE, message=FALSE}
+load("data/crosstissue-correlations-meth/eset-meth-adjusted.rda")
+
+cors.df <- read.csv("results/crosstissue-correlations-meth.csv",
+  stringsAsFactors = FALSE)
+cors.df$tissue.pair <- factor(cors.df$tissue.pair)
+
+# Annotate probes
+f.cols <- c("symbol", "chr", "position", "strand", "cpg.island", 
+  "distance.to.tss", "description")
+
+cors.df <- data.frame(cors.df, 
+  fData(eset.meth)[cors.df$id, f.cols],
+  row.names = NULL)
+cors.df <- transform(cors.df, distance.to.tss = as.numeric(distance.to.tss))
+```
+
+Explore and visualize cross-tissue correlations results. 
+
+* script: [`crosstissue-correlations-meth-analysis.r`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/crosstissue-correlations-meth-analysis.r)
+* results: [`crosstissue-correlations-meth.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/crosstissue-correlations-meth.csv)
+
+
+## Methods
+This analysis was restricted to only autosomal probes. Low-variance probes were filtered out by removing any probes with an experiment-wide standard deviation < 0.05.
+
+Methylation levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis. 
+
+Correlations were calculated using the standard `cor` function and with use set to `"pairwise.complete"`. P-values were obtained using the `WGCNA` package's `corPvalueStudent` function and multiple testing corrections were performed using the Benjamini & Hochberg method for generating q-values within each tissue pair.
+
+## Results
+
+```{r results-table, results='asis'}
+results.table <- ddply(cors.df, .(tissue.pair), summarise, 
+  'p-value < 0.05' = sum(pvalue < 0.05),
+  'q-value < 0.05' = sum(qvalue < 0.05))
+
+print_xtable(results.table)
+```
+
+### Correlation and p-value histograms
+Histograms of the Pearson correlation values (left) and corresponding p-values (right).
+
+```{r histograms, message=FALSE, fig.height=5}
+p.hist <- ggplot(cors.df) + 
+  aes(x = pvalue) + geom_histogram() +
+  facet_grid(tissue.pair~.)
+
+r.hist <- ggplot(cors.df) + 
+  aes(x = r) + geom_histogram() +
+  geom_vline(xintercept = 0, color = "white") +
+  facet_grid(tissue.pair~.)
+
+ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(r.hist, p.hist))
+```
+
+
+### Pairwise comparisons of tissue-pair correlations
+
+```{r r-tissue-pairs, fig.height=5.5}
+r.mat <- dcast(data = cors.df, 
+  id + chr + cpg.island + distance.to.tss ~ tissue.pair, value.var = "r")
+
+
+plot_matrix(r.mat, facet.vars = levels(cors.df$tissue.pair), density = TRUE) +
+  xlab("Cross-tissue correleation") + ylab("Cross-tissue correlation")
+```
+
+
+#### Correlation of cross-tissue methylation correlations
+The following heatmap depicts the cross-tissue correlations.
+
+```{r r-tissue-pairs-correlations, fig.width=3.5, fig.height=2.5}
+r.cors <- cor(r.mat[, levels(cors.df$tissue.pair)])
+dimnames(r.cors) <- lapply(dimnames(r.cors), function(x) sub("-", "\n", x))
+
+heat_matrix(r.cors, symmetric = TRUE, legend.title = "cor", font.size = 3)
+```
+
+### Cross-tissue pairs plots for significant correlations
+Pairs plots for the 50 most significant cross-tissue correlations are provided [here](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/crosstissue-correlations-meth/cors-meth-top-probes.pdf).
+
+```{r sig-cors-pairs-plot, include=FALSE}
+
+# Produce visualizations for individual probes with largest correlations
+sig.cors <- subset(cors.df, qvalue < .05)
+sig.cors <- arrange(sig.cors, qvalue)
+
+# Top 50 unique probes
+probes <- unique(sig.cors$id)[1:50]
+
+probe.plots <- list()
+for(p in probes) {
+
+  p.df <- as.data.frame.table(exprs(eset.meth)[p,], stringsAsFactors = F)
+  p.df <- cbind(p.df, pData(eset.meth)[p.df$Var1, c("tissue", "individual")])
+  p.df <- dcast(p.df, individual ~ tissue, value.var = "Freq")
+  p.df <- join(p.df, pData(eset.meth), by = "individual", match = "first")
+  
+  p.title <- with(subset(sig.cors, id == p)[1,],
+    paste(symbol, " (", tissue.pair, " cor = ", round(r, 2), ")", sep = ""))
+  
+  probe.plots[[p]] <- plot_matrix(p.df, mapping = aes(color = gender),
+    facet.vars = levels(eset.meth$tissue)) +
+  stat_smooth(method = "lm") +
+  xlab(paste("CpG methylation (", p, ")", sep = "")) +
+  ylab(paste("CpG methylation (", p, ")", sep = "")) +
+  opts(title = p.title)
+}
+
+pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
+    width = 7, height = 6)
+temp <- lapply(probe.plots, print)
+dev.off()
+```
