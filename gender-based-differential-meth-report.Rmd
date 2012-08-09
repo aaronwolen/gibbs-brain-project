@@ -26,7 +26,9 @@ library(plyr)
 library(reshape2)
 library(ggplot2)
 
-source("functions/plot_matrix.r")
+# ggpairs function
+devtools::source_gist("3298388")
+
 source("functions/heat_matrix.r")
 source("functions/print_xtable.r")
 source("functions/save-figures.r")
@@ -88,7 +90,7 @@ tissues <- unique(eset.meth$tissue)
 
 t.dm <- dcast(t.results, id ~ tissue, value.var = "dm")
 
-plot_matrix(data = subset(t.dm, id != "cg15915418"), 
+ggpairs(data = subset(t.dm, id != "cg15915418"), 
   facet.vars = tissues, alpha = 0.5, size = 0.75) + 
   stat_smooth(method = "lm") + 
   xlab("Mean gender difference")  + ylab("Mean gender difference")

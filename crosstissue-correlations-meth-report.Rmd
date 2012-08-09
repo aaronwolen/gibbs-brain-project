@@ -27,9 +27,11 @@ library(plyr)
 library(ggplot2)
 library(reshape2)
  
+# ggpairs function
+devtools::source_gist("3298388")
+
 source("functions/print_xtable.r")
 source("functions/save-figures.r")
-devtools::source_gist("3298388")
 source("functions/heat_matrix.r")
 ```
 

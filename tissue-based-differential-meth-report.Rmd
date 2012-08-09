@@ -30,7 +30,9 @@ library(plyr)
 library(reshape2)
 library(ggplot2)
 
-source("functions/plot_matrix.r")
+# ggpairs function
+devtools::source_gist("3298388")
+
 source("functions/heat_matrix.r")
 source("functions/print_xtable.r")
 source("functions/save-figures.r")
@@ -164,7 +166,7 @@ Pairwise comparison of tissue-based methylation differences across all tissue pa
 ```{r dm-tissue-pairs, fig.height=5.5, dependson="ttest"}
 t.dm <- dcast(t.results, id ~ pair, value.var = "dm")
 
-plot_matrix(data = t.dm, 
+ggpairs(data = t.dm, 
   facet.vars = pair.labels, alpha = 0.5, size = 0.75) + 
   stat_smooth(method = "lm") + 
   xlab("Mean tissue difference")  + ylab("Mean tissue difference") +

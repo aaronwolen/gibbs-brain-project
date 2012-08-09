@@ -6,6 +6,9 @@ library(plyr)
 library(reshape2)
 library(ggplot2)
 
+# ggpairs function
+devtools::source_gist("3298388")  
+
 # Load data ---------------------------------------------------------------
 
 source("4b-load-meth-data.r")
@@ -37,11 +40,9 @@ save_plot("volcano-plot.png")
 
 
 # Pairwise tissue comparisons of mean gender differences ------------------
-source("functions/plot_matrix.r")
-
 t.dm <- dcast(t.results, id ~ tissue, value.var = "dm")
 
-plot_matrix(data = subset(t.dm, id != "cg15915418"), 
+ggpairs(data = subset(t.dm, id != "cg15915418"), 
   facet.vars = c("CRBLM", "FCTX", "PONS", "TCTX"), alpha = 0.5, size = 0.75) + 
   stat_smooth(method = "lm") + 
   xlab("Mean gender difference")  + ylab("Mean gender difference")

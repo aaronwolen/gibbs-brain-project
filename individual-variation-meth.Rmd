@@ -28,8 +28,10 @@ library(ggaffy)
 library(ggplot2)
 library(grid)
 
+# ggpairs function
+devtools::source_gist("3298388")
+
 source("functions/save-figures.r")
-source("functions/plot_matrix.r")
 source("functions/heat_matrix.r")
 source("functions/print_xtable.r")
 ```
@@ -110,7 +112,7 @@ The following plot includes only autosomal probes.
 sd.mat <- dcast(probe.df, id ~ tissue, value.var = "sd")
 sd.mat <- merge(fdata, sd.mat, by = "id", all.x = F)
 
-plot_matrix(data.frame(subset(sd.mat, chr %in% 1:22)), 
+ggpairs(data.frame(subset(sd.mat, chr %in% 1:22)), 
   density = TRUE, bins = 50,
   facet.vars = levels(eset.meth$tissue)) +
 xlab("SD (autosomal probes)") + ylab("SD (autosomal probes)") +
@@ -171,7 +173,7 @@ plot.df <- dcast(plot.df,
   tissuebank + batch + age + gender + individual ~ tissue, 
   value.var = "expression")
  
-plot_matrix(plot.df, facet.vars = levels(eset.meth$tissue), 
+ggpairs(plot.df, facet.vars = levels(eset.meth$tissue), 
   mapping = aes(color = age, shape = gender), size = 2, alpha = 0.5)
 ```  
 
