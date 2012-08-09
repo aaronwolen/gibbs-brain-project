@@ -158,7 +158,7 @@ ggplot(t.results) +
 ```
 
 
-### Pairwise tissue comparisons of mean gender differences
+### Pairwise comparisons of mean tissue differences
 Pairwise comparison of tissue-based methylation differences across all tissue pairs. In all three tissue combinations that include cerebellum, the methylation differences are highly correlated. The comparisons including pons and either of the two cortical regions are also correlated (the correlation direction is a result of the order in which tissues were compared). 
 
 ```{r dm-tissue-pairs, fig.height=5.5, dependson="ttest"}
