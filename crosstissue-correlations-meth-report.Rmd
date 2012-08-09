@@ -2,7 +2,7 @@
 
 ```{r setup, include=FALSE}
 # source("functions/knit_wiki.r")
-# knit_wiki("crosstissue-correlations-meth-report.Rmd", output.filename = "Cross tissue methylation correlations")
+# knit_wiki("crosstissue-correlations-meth-report.Rmd", output.filename = "Cross-tissue methylation correlations")
 
 report.title <- "crosstissue-correlations-meth"
 fig.dir <- file.path("figures", report.title)
@@ -10,8 +10,8 @@ fig.prefix <- "cors-meth-"
 
 dir.create(fig.dir, showWarnings = FALSE)
 
-# opts_knit$set(upload.fun = function(file, 
-#   key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
+opts_knit$set(upload.fun = function(file, 
+  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
 
 opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
@@ -20,7 +20,7 @@ opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
 ```
 
 ```{r load-libraries, message=FALSE}
-library(Biobase)
+# library(Biobase)
 
 library(grid)
 library(plyr)
@@ -65,6 +65,7 @@ Correlations were calculated using the standard `cor` function and with use set 
 
 ## Results
 
+### Table of significant cross-tissue correlations
 ```{r results-table, results='asis'}
 results.table <- ddply(cors.df, .(tissue.pair), summarise, 
   'p-value < 0.05' = sum(pvalue < 0.05),
