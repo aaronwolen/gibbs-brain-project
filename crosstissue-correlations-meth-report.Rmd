@@ -92,7 +92,7 @@ ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(r.hist, p.hist))
 
 ### Pairwise comparisons of tissue-pair correlations
 
-```{r r-tissue-pairs, fig.height=5.5}
+```{r r-tissue-pairs, fig.height=5}
 r.mat <- dcast(data = cors.df, 
   id + chr + cpg.island + distance.to.tss ~ tissue.pair, value.var = "r")
 
@@ -142,7 +142,7 @@ for(p in probes) {
   stat_smooth(method = "lm") +
   xlab(paste("CpG methylation (", p, ")", sep = "")) +
   ylab(paste("CpG methylation (", p, ")", sep = "")) +
-  opts(title = p.title)
+  opts(title = p.title) + coord_fixed()
 }
 
 pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
