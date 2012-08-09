@@ -17,8 +17,6 @@ opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
   cache=FALSE, fig.width=5, fig.height=4, dpi=150)
-
-
 ```
 
 ```{r load-libraries}
@@ -86,14 +84,16 @@ vp %+% subset(t.results, id != "cg15915418")
 Pairwise comparison of gender-based methylation differences across all tissues. As above, cg15915418 was removed prior to plotting. 
 
 ```{r dm-tissue-pairs, fig.width=5.5}
-tissues <- unique(eset.meth$tissue)
+tissues <- levels(eset.meth$tissue)
 
 t.dm <- dcast(t.results, id ~ tissue, value.var = "dm")
 
-ggpairs(data = subset(t.dm, id != "cg15915418"), 
-  facet.vars = tissues, alpha = 0.5, size = 0.75) + 
-  stat_smooth(method = "lm") + 
+ggpairs(data = subset(t.dm, id != "cg15915418"), facet.vars = tissues, 
+  facet.scale = "fixed", alpha = 0.5, size = 0.75) + 
+  stat_smooth(method = "lm") + coord_fixed() +
   xlab("Mean gender difference")  + ylab("Mean gender difference")
+  opts(axis.text.x = theme_text(angle = 90, hjust = 1, 
+    colour = "grey50", size = base_size * 0.8)) 
 ```
 
 ### Mean difference correlations across tissues
