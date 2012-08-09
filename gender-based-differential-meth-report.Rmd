@@ -120,42 +120,59 @@ print_xtable(subset(t.results, id == "cg15915418"),
   display = c("p.value" = "e", "q.value" = "e"))
 ```
 
-The following barplot verifies there is indeed a huge and consistent difference in cg1591541 methylation betweengenders, with females showing almost complete repression in all four tissues. As this pattern is characteristic of probes targeting the sex chromosomes, I looked into the possibility that cg15915418 is mis-annotated.  
+The following barplot verifies there is indeed a huge and consistent difference in cg1591541 methylation between genders, with females showing almost complete repression in all four tissues. As this pattern is characteristic of probes targeting the sex chromosomes, I looked into the possibility that cg15915418 is mis-annotated.  
 ```{r barplot-cg15915418, fig.width = 7.5}
-
-probe_barplot(eset.meth, probe = "cg15915418", fill = "gender", 
-              facet.row = "tissue", base.size = 8)
-
-save_plot("barplot-cg15915418.pdf", width = 7.5, height = 4, path = fig.dir)
+probe_barplot(eset.meth, probe = "cg15915418", x = "individual",
+  fill = "gender", facets = tissue ~ ., base.size = 8)
 ```
 
-Blating cg15915418's `sourceseq` against version hg19 of the human regnome revealed a strong match on the X chromosome ([full results](http://genome.ucsc.edu/cgi-bin/hgc?o=64627510&g=htcUserAli&i=../trash/hgSs/hgSs_genome_47ba_dabb20.pslx+..%2Ftrash%2FhgSs%2FhgSs_genome_47ba_dabb20.fa+YourSeq&c=chrX&l=64627510&r=64627560&db=hg19&hgsid=284541277)), in addition to its purported Chr 9 target. As such, it's likely cg15915418 is actually measuring X chromosome methylation and should be re-annotated. 
+Blating cg15915418's `sourceseq` against version hg19 of the human regnome revealed a strong match on the X chromosome ([full results](http://useast.ensembl.org/Multi/blastview/BLA_ej6OhcbjM)), in addition to its purported Chr 9 target. As such, it's likely cg15915418 is actually measuring X chromosome methylation and should be re-annotated. 
 
-The barplot above also reveals a potential sample mix-up as individual 1886's methylation levels are on par with other males in cerebellum only. Genereating this plot for a random sample of other X chr probes showing sex-specific methylation patterns also suggested the sample labeled as 1886 cerebellum comes from a male. 
+The barplot above also reveals a potential sample mix-up as individual 1886's methylation levels are on par with other females in cerebellum only. Genereating this plot for a random sample of other X chr probes showing sex-specific methylation patterns also suggested the sample labeled as 1886 cerebellum comes from a female. 
 
-```{r examine-sig-probes, eval=FALSE}
+### Individual probe plots
+Individual plots were generated for the top 50 probes with the most significant gender differences. 
+
+* [bar plots](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/gender-based-meth-differences/meth-gender-top-probes-barplot.pdf) provide each individual's tissue-specific methylation levels.
+* [dot plots](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/gender-based-meth-differences/meth-gender-top-probes-dotplot.pdf) visualize methylation by gender and provide mean and sd summarizations. 
+
+```{r examine-sig-probes, include=FALSE}
 
 # Produce visualizations for individiual probes with largest gender differences
-sig.results <- subset(t.results, q.value < .1 & id != "cg15915418")
+sig.results <- subset(t.results, q.value < .1)
 sig.results <- arrange(sig.results, q.value)
 
-top.probes <- unique(sig.results$id)[1:20]
+top.probes <- unique(sig.results$id)[1:50]
 
-# Barplot providing each individual's tissue-specific methylation level
+bar.plots <- list()
+dot.plots <- list()
+
+for(p in top.probes) {
+  
+  y.lab <- paste(fData(eset.meth[p,])$symbol, " (", p, ") ",
+    "methylation", sep = "")
+  
+  # Barplot providing each individual's tissue-specific methylation level
+  bar.plots[[p]] <- probe_barplot(eset.meth, probe = p, x = "individual", 
+    fill = "gender", facets = tissue ~ ., base.size = 8) + ylab(y.lab)
+  
+  # Dotplot of methylation levels with mean and sd summarizations
+  dot.plots[[p]] <- probe_dotplot(eset.meth, probe = p, x = "gender", 
+    color = "age", facets = . ~ tissue, base.size = 12) +
+  stat_summary(fun.data = function(x) mean_sdl(x, mult = 1), 
+    color = "grey50", geom = "crossbar", alpha = 0.2) +
+  ylab(y.lab)
+}
+
+
 pdf(file.path(fig.dir, paste(fig.prefix, "top-probes-barplot.pdf", sep = "")), 
   width = 10, height = 6)
-for(p in top.probes) {
-  plot(probe_barplot(eset.meth, probe = p, fill = "gender", base.size = 8))
-}
+temp <- lapply(bar.plots, print)
 dev.off()
 
-# Dotplot of methylation levels with mean and sd summarizations
+
 pdf(file.path(fig.dir, paste(fig.prefix, "top-probes-dotplot.pdf", sep = "")),
   width = 10, height = 6)
-for(p in top.probes) {
-  plot(probe_dotplot(eset.meth, probe = p, color = "age", base.size = 12) +
-    stat_summary(fun.data = function(x) mean_sdl(x, mult = 1), 
-      color = "grey50", geom = "crossbar", alpha = 0.2))
-}
+temp <- lapply(dot.plots, print)
 dev.off()
 ```
