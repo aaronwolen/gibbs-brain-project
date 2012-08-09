@@ -29,7 +29,7 @@ library(reshape2)
  
 source("functions/print_xtable.r")
 source("functions/save-figures.r")
-source("functions/plot_matrix.r")
+devtools::source_gist("3298388")
 source("functions/heat_matrix.r")
 ```
 
@@ -97,8 +97,10 @@ r.mat <- dcast(data = cors.df,
   id + chr + cpg.island + distance.to.tss ~ tissue.pair, value.var = "r")
 
 
-plot_matrix(r.mat, facet.vars = levels(cors.df$tissue.pair), density = TRUE) +
-  xlab("Cross-tissue correleation") + ylab("Cross-tissue correlation")
+ggpairs(r.mat, facet.vars = levels(cors.df$tissue.pair), 
+  facet.scale = "fixed", density = TRUE) + coord_fixed() + 
+  xlab("Cross-tissue correleation") + 
+  ylab("Cross-tissue correlation")
 ```
 
 
@@ -135,8 +137,8 @@ for(p in probes) {
   p.title <- with(subset(sig.cors, id == p)[1,],
     paste(symbol, " (", tissue.pair, " cor = ", round(r, 2), ")", sep = ""))
   
-  probe.plots[[p]] <- plot_matrix(p.df, mapping = aes(color = gender),
-    facet.vars = levels(eset.meth$tissue)) +
+  probe.plots[[p]] <- ggpairs(p.df, mapping = aes(color = gender),
+    facet.vars = levels(eset.meth$tissue), facet.scale = "fixed") +
   stat_smooth(method = "lm") +
   xlab(paste("CpG methylation (", p, ")", sep = "")) +
   ylab(paste("CpG methylation (", p, ")", sep = "")) +
