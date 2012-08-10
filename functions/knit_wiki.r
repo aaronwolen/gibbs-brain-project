@@ -6,8 +6,7 @@
 #'   may also be a function that manipulates the input filename
 
 knit_wiki <- function(filename, output.path = "wiki", output.ext = "md",
-  output.filename,
-  git.path = "https://github.com/aaronwolen/gibbs-brain-project/blob/master/") {
+  output.filename) {
   require(knitr, quietly = TRUE)
   
   # Create output filename and add proper extension 
@@ -19,6 +18,4 @@ knit_wiki <- function(filename, output.path = "wiki", output.ext = "md",
   
   
   knit(filename, output)
-  
-  # Point all image links to github url
 }
