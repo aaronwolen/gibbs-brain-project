@@ -217,4 +217,3 @@ pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
 temp <- lapply(probe.plots, print)
 dev.off()
 ```  
-  
