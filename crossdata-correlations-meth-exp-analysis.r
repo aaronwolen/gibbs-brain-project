@@ -5,6 +5,7 @@
 ###########################################################################
 
 library(Biobase)
+source("functions/cor_cross_eset.r")
 options(stringsAsFactors = FALSE)
 
 # Read in command line arguments ------------------------------------------
@@ -46,10 +47,6 @@ meth.sub <- eset.meth[, eset.meth$individual %in% common.ids &
 sampleNames(exp.sub) <- exp.sub$individual
 sampleNames(meth.sub) <- meth.sub$individual
 
-# Reorder second dataset to match first
-meth.sub <- meth.sub[, sampleNames(exp.sub)]
-stopifnot(all(sampleNames(exp.sub) == sampleNames(meth.sub)))
-
 
 # Construct cross-platform probe look-up table ----------------------------
 if( exists("probe.key") ) {
@@ -74,47 +71,7 @@ if( exists("probe.key") ) {
 }
 
 # Correlate expression/methylation residuals ------------------------------
-
-# Extract transposed expression matrices
-exp.mat <- t(exprs(exp.sub))
-meth.mat <- t(exprs(meth.sub))
-
-# Correlation results data.frame
-cors.df <- list()
-  
-for(target in unique(probe.key$target)) {
-  
-  # Probes from each eSet with common target
-  ep <- unique(probe.key$exp[probe.key$target == target])
-  mp <- unique(probe.key$meth[probe.key$target == target])
-  
-  out <- cor(meth.mat[, mp], exp.mat[, ep], use = "pairwise.complete")
-  
-  if(length(mp) == 1 | length(ep) == 1) {
-    out <- data.frame(Var1 = mp, Var2 = ep, Freq = as.numeric(out))
-  } else {
-    out <- as.data.frame.table(out)  
-  }
-  
-  # Count number of values used in each correlation
-  out$n <- apply(as.matrix(out), 1, function(x)
-    sum(!is.na(meth.mat[, x[1]]) & !is.na(exp.mat[, x[2]])))
-  
-  cors.df[[target]] <- data.frame(target = target, out)
-}
-
-# Unlist
-cors.df <- data.frame(do.call("rbind", cors.df), row.names = NULL)
-
-# Rename and reoder
-names(cors.df) <- c("gene", "meth", "exp", "r", "n")
-cors.df <- cors.df[, c("gene", "meth", "exp", "n", "r")]
-
-# Calculate p-values
-cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, cors.df$n)
-
-# Calculate q-values
-cors.df$qvalue <- p.adjust(cors.df$pvalue, method = "BH")
+cors.df <- cor_cross_eset(meth.sub, exp.sub, probe.key)
 
 write.csv(cors.df, file = file.path("results",
   paste("crossdata-meth-exp-correlations-", tolower(tissue), ".csv", sep = "")), row.names = FALSE)
