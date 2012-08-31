@@ -56,20 +56,25 @@ stopifnot(all(sampleNames(exp.sub) == sampleNames(meth.sub)))
 
 
 # Construct cross-platform probe look-up table ----------------------------
-
-if( exists(probe.key) ) {
+if( exists("probe.key") ) {
+  
+  if(!all(names(probe.key) %in% c("target", "meth", "exp"))) {
+    stop("Supplied probe.key data.frame must contain three columns named:",
+         "target, meth and exp", call. = FALSE)
+  }
+  
   cat("Supplied probe.key contains", length(unique(probe.key$meth)), 
       "methylation probes and", length(unique(probe.key$exp)), 
-      "mRNA probes targeting", length(unique(probe.key$symbol)), "genes\n")
+      "mRNA probes with", length(unique(probe.key$target)), "common targets\n")
 } else {
   # Identify meth and exp probes with common targets 
-  meth.key <- with(fData(meth.sub), data.frame(symbol = symbol, meth = id))
-  exp.key <- with(fData(exp.sub), data.frame(symbol = symbol, exp = id))
-  probe.key <- merge(meth.key, exp.key, by = "symbol", sort = FALSE)
+  meth.key <- with(fData(meth.sub), data.frame(target = symbol, meth = id))
+  exp.key <- with(fData(exp.sub), data.frame(target = symbol, exp = id))
+  probe.key <- merge(meth.key, exp.key, by = "target", sort = FALSE)
   
   cat("Identified", length(unique(probe.key$meth)), "methylation probes and",
-      length(unique(probe.key$exp)), "mRNA probes targeting the",
-      length(unique(probe.key$symbol)), "genes present in both datasets.\n")
+      length(unique(probe.key$exp)), "mRNA probes with",
+      length(unique(probe.key$target)), "common targets\n")
 }
 
 # Correlate expression/methylation residuals ------------------------------
@@ -81,11 +86,11 @@ meth.mat <- t(exprs(meth.sub))
 # Correlation results data.frame
 cors.df <- list()
   
-for(g %in% unique(probe.key$symbol)) {
+for(target in unique(probe.key$target)) {
   
-  # Probes from each eSet targeting current gene 
-  ep <- unique(probe.key$exp[probe.key$symbol == g])
-  mp <- unique(probe.key$meth[probe.key$symbol == g])
+  # Probes from each eSet with common target
+  ep <- unique(probe.key$exp[probe.key$target == target])
+  mp <- unique(probe.key$meth[probe.key$target == target])
   
   out <- cor(meth.mat[, mp], exp.mat[, ep], use = "pairwise.complete")
   
@@ -99,15 +104,15 @@ for(g %in% unique(probe.key$symbol)) {
   out$n <- apply(as.matrix(out), 1, function(x)
     sum(!is.na(meth.mat[, x[1]]) & !is.na(exp.mat[, x[2]])))
   
-  cors.df[[g]] <- out
+  cors.df[[target]] <- data.frame(target = target, out)
 }
 
 # Unlist
 cors.df <- data.frame(do.call("rbind", cors.df), row.names = NULL)
 
 # Rename and reoder
-names(cors.df) <- c("symbol", "meth", "exp", "r", "n")
-cors.df <- cors.df[, c("symbol", "meth", "exp", "n", "r")]
+names(cors.df) <- c("gene", "meth", "exp", "r", "n")
+cors.df <- cors.df[, c("gene", "meth", "exp", "n", "r")]
 
 # Calculate p-values
 cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, cors.df$n)
@@ -116,5 +121,4 @@ cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, cors.df$n)
 cors.df$qvalue <- p.adjust(cors.df$pvalue, method = "BH")
 
 write.csv(cors.df, file = file.path("results",
-  paste("crossdata-meth-exp-correlations-", tolower(tissue), ".csv", sep = "")),
-  row.names = FALSE)
+  paste("crossdata-meth-exp-correlations-", tolower(tissue), ".csv", sep = "")), row.names = FALSE)
