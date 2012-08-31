@@ -57,15 +57,20 @@ stopifnot(all(sampleNames(exp.sub) == sampleNames(meth.sub)))
 
 # Construct cross-platform probe look-up table ----------------------------
 
-# Identify meth and exp probes with common targets 
-meth.key <- with(fData(meth.sub), data.frame(symbol = symbol, meth = id))
-exp.key <- with(fData(exp.sub), data.frame(symbol = symbol, exp = id))
-probe.key <- merge(meth.key, exp.key, by = "symbol", sort = FALSE)
-
-cat("Identified", length(unique(probe.key$meth)), "methylation probes and",
-    length(unique(probe.key$exp)), "mRNA probes targeting the",
-    length(unique(probe.key$symbol)), "genes present in both datasets.\n")
-
+if( exists(probe.key) ) {
+  cat("Supplied probe.key contains", length(unique(probe.key$meth)), 
+      "methylation probes and", length(unique(probe.key$exp)), 
+      "mRNA probes targeting", length(unique(probe.key$symbol)), "genes\n")
+} else {
+  # Identify meth and exp probes with common targets 
+  meth.key <- with(fData(meth.sub), data.frame(symbol = symbol, meth = id))
+  exp.key <- with(fData(exp.sub), data.frame(symbol = symbol, exp = id))
+  probe.key <- merge(meth.key, exp.key, by = "symbol", sort = FALSE)
+  
+  cat("Identified", length(unique(probe.key$meth)), "methylation probes and",
+      length(unique(probe.key$exp)), "mRNA probes targeting the",
+      length(unique(probe.key$symbol)), "genes present in both datasets.\n")
+}
 
 # Correlate expression/methylation residuals ------------------------------
 
