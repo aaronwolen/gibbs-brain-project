@@ -21,10 +21,6 @@ if(length(args) == 0){
 
 tissue <- match.arg(tissue, c("PONS", "CRBLM", "FCTX", "TCTX"))
 
-# Register multicore backend ----------------------------------------------
-n.cores <- multicore:::detectCores()
-registerDoMC(n.cores)
-
 
 # Load adjusted data ------------------------------------------------------
 load("data/crossdata-correlations-meth-exp/eset-exp-adjusted.rda")
