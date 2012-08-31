@@ -1,41 +1,6 @@
 # Correlation between gene expression and local methylation
 
-```{r calculate-correlations, eval=FALSE, include=FALSE}
-  
-# Calculate methylation/expression correlaetions for each tissue. 
-tissues <- c("CRBLM", "FCTX", "TCTX", "PONS")
-
-dir.create("log")
-
-for(t in tissues) {
-  system(paste("R CMD BATCH --no-save --no-restore",
-    shQuote(paste("--args tissue=", shQuote(t), sep = "")),
-    "crossdata-correlations-meth-exp-analysis.r",
-    file.path("log", paste("crossdata-correlations-meth-exp", 
-      tolower(t), "output.r", sep = "-"))))
-}
-
-# Combine results into a single data.frame
-cors.df <- sapply(tissues, simplify = FALSE, function(x)
-  read.csv(paste("results/crossdata-meth-exp-correlations-", 
-    tolower(x), ".csv", sep = "")))
-
-cors.df <- reshape2::melt(cors.df, id.vars = colnames(cors.df[[1]]))
-cors.df <- cbind(tissue = cors.df$L1, subset(cors.df, select = -L1))
-
-# Remove individual results
-file.remove(dir("results", pattern = "crossdata-meth-exp-correlations", 
-  full.names = TRUE))
-
-# Export combined results
-write.csv(cors.df, "results/crossdata-meth-exp-correlations.csv", 
-  row.names = FALSE)
-```
-
 ```{r setup, include=FALSE}
-# source("functions/knit_wiki.r")
-# knit_wiki("crossdata-correlations-meth-exp-report.Rmd", output.filename = "Correlations between methylation and expression data")
-
 report.title <- "crossdata-correlations-meth-exp"
 fig.dir <- file.path("figures", report.title)
 fig.prefix <- "cors-meth-exp-"
