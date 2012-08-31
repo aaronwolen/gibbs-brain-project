@@ -9,6 +9,7 @@ library(Biobase)
 library(foreach)
 library(doMC)
 
+options(stringsAsFactors = FALSE)
 
 # Read in command line arguments ------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
@@ -32,6 +33,7 @@ registerDoMC(n.cores)
 # Load adjusted data ------------------------------------------------------
 load("data/crossdata-correlations-meth-exp/eset-exp-adjusted.rda")
 load("data/crossdata-correlations-meth-exp/eset-meth-adjusted.rda")
+
 
 # Subset ExpressionSets ---------------------------------------------------
 
@@ -57,17 +59,17 @@ meth.sub <- meth.sub[, sampleNames(exp.sub)]
 stopifnot(all(sampleNames(exp.sub) == sampleNames(meth.sub)))
 
 
-# Extract expression matrices ---------------------------------------------
+# Construct cross-platform probe look-up table ----------------------------
 
 # Identify meth and exp probes with common targets 
-genes <- intersect(fData(exp.sub)$symbol, fData(meth.sub)$symbol)
+meth.key <- with(fData(meth.sub), data.frame(symbol = symbol, meth = id))
+exp.key <- with(fData(exp.sub), data.frame(symbol = symbol, exp = id))
+probe.key <- merge(meth.key, exp.key, by = "symbol", sort = FALSE)
 
-# Identify probes corresponding to the common targets
-meth.probes <- subset(fData(meth.sub), symbol %in% genes)$id
-exp.probes <- subset(fData(exp.sub), symbol %in% genes)$id
+cat("Identified", length(unique(probe.key$meth)), "methylation probes and",
+    length(unique(probe.key$exp)), "mRNA probes targeting the",
+    length(unique(probe.key$symbol)), "genes present in both datasets.\n")
 
-cat("Identified", length(meth.probes), "methylation probes and ", length(exp.probes),
-    "corresponding to the", length(genes), "present in both datasets.\n")
 
 
 # Extract expression matrices ---------------------------------------------
@@ -79,8 +81,9 @@ meth.mat <- t(exprs(meth.sub))
 
 cors.df <- foreach(g = genes, .combine = "rbind") %dopar% {
 
-  ep <- rownames(fData(exp.sub)[fData(exp.sub)$symbol == g,])
-  mp <- rownames(fData(meth.sub)[fData(meth.sub)$symbol == g,])
+  # Probes from each eSet targeting current gene 
+  ep <- unique(probe.key$exp[probe.key$symbol == g])
+  mp <- unique(probe.key$meth[probe.key$symbol == g])
   
   out <- cor(meth.mat[, mp], exp.mat[, ep], use = "pairwise.complete")
   
