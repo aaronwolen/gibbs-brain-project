@@ -21,14 +21,14 @@ dbGAP: [phs000249.v1.p](http://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.c
 #### Adjust methylation and expression data for age and tissue bank
 `Rscript crossdata-correlations-meth-exp-adjust-data.r`
 
-__Output:__ 
+Output:
 * data/crossdata-correlations-meth-exp/eset-meth-adjusted.rda
 * data/crossdata-correlations-meth-exp/eset-exp-adjusted.rda
 
 #### Calculate methylation/expression correlations
 `Rscript crossdata-correlations-meth-exp-analysis.r`
 
-__Output:__
+Output:
 * results/crossdata-meth-exp-correlations.csv
 
 #### Generate report
