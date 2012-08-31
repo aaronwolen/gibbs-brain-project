@@ -59,9 +59,6 @@ stopifnot(all(sampleNames(exp.sub) == sampleNames(meth.sub)))
 
 # Extract expression matrices ---------------------------------------------
 
-exp.mat <- exprs(exp.sub)
-meth.mat <- exprs(meth.sub)
-
 # Identify meth and exp probes with common targets 
 genes <- intersect(fData(exp.sub)$symbol, fData(meth.sub)$symbol)
 
