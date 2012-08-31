@@ -5,10 +5,6 @@
 ###########################################################################
 
 library(Biobase)
-
-library(foreach)
-library(doMC)
-
 options(stringsAsFactors = FALSE)
 
 # Read in command line arguments ------------------------------------------
@@ -71,16 +67,17 @@ cat("Identified", length(unique(probe.key$meth)), "methylation probes and",
     length(unique(probe.key$symbol)), "genes present in both datasets.\n")
 
 
+# Correlate expression/methylation residuals ------------------------------
 
-# Extract expression matrices ---------------------------------------------
+# Extract transposed expression matrices
 exp.mat <- t(exprs(exp.sub))
 meth.mat <- t(exprs(meth.sub))
 
-
-# Correlate expression/methylation residuals ------------------------------
-
-cors.df <- foreach(g = genes, .combine = "rbind") %dopar% {
-
+# Correlation results data.frame
+cors.df <- list()
+  
+for(g %in% unique(probe.key$symbol)) {
+  
   # Probes from each eSet targeting current gene 
   ep <- unique(probe.key$exp[probe.key$symbol == g])
   mp <- unique(probe.key$meth[probe.key$symbol == g])
@@ -97,8 +94,11 @@ cors.df <- foreach(g = genes, .combine = "rbind") %dopar% {
   out$n <- apply(as.matrix(out), 1, function(x)
     sum(!is.na(meth.mat[, x[1]]) & !is.na(exp.mat[, x[2]])))
   
-  data.frame(symbol = g, out)
+  cors.df[[g]] <- out
 }
+
+# Unlist
+cors.df <- data.frame(do.call("rbind", cors.df), row.names = NULL)
 
 # Rename and reoder
 names(cors.df) <- c("symbol", "meth", "exp", "r", "n")
