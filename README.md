@@ -32,5 +32,5 @@ __Output:__
 * results/crossdata-meth-exp-correlations.csv
 
 #### Generate report
-`Rscript -e knit("crossdata-correlations-meth-exp-report.Rmd")`
+`Rscript -e 'knitr::knit("crossdata-correlations-meth-exp-report.Rmd")'`
 
