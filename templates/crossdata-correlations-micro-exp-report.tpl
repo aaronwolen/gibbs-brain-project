@@ -42,7 +42,7 @@ ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(r.hist, p.hist))
 
 
 #### Frequency of significant microRNA correleations
-A subset of microRNAs are correlated with very large lists of genes. The following figure summarizes the number of significant correlations associated with individual microRNAs. The tables below provide for each tissue the ten microRNAs associated with the largest number of significant correlations. 
+Boxplot showing the number of significant mRNA correlations associated with each microRNA. The tables below provide for each tissue the ten microRNAs associated with the largest number of significant correlations.
 
 ```{r <% mirdb %>-count-correlations, fig.width=5, fig.height=3}
 sig.cors <- subset(cors.df, adj.pvalue < .05)
@@ -81,7 +81,6 @@ for(t in unique(mir.counts$tissue)) {
 
 
 #### Positive vs negative correlations
-In all tissues the number of positive correlations exceeded that of negative correlations. 
 
 ```{r <% mirdb %>-count-correlations-direction, fig.width=5, fig.height=3}
 ggplot(data.frame(sig.cors, 
@@ -92,7 +91,7 @@ ggplot(data.frame(sig.cors,
 ```
 
 #### Scatter plots
-Scatter plots for the 50 most significant microRNA/mRNA correlations are provided [here](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/crossdata-correlations-micro-exp/<% mirdb %>-cors-micro-exp-top-probes.pdf).
+Scatter plots for the 50 most significant microRNA/mRNA correlations are provided [here](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/crossdata-correlations-micro-exp/cors-micro-exp-<% mirdb %>-top-probes.pdf).
 
 ```{r <% mirdb %>-sig-probes-scatterplots, include=FALSE}
 # Produce visualizations for individual probes with largest correlations
