@@ -63,5 +63,5 @@ cat(report, "\n")
 ### Outlier exclusion
 The original analysis was run using mirbase predictions and included all samples for which microRNA and mRNA expression data was available. The original results can be obtained from commit [468768aa9d](https://github.com/aaronwolen/gibbs-brain-project/commit/468768aa9d). The analysis was then re-run removing samples that showed extreme deviations from a median-generated reference sample (see results from the QC analyses for more information). Without these outliers, the [updated results](https://github.com/aaronwolen/gibbs-brain-project/commit/e404d0a) contained ~2,000 fewer correlations in the cerebellum with a q-value < 0.05. However, at the same level of significance, there were ~2,000 more in pons, ~3,000 more in temporal cortex and ~4,000 more in the frontal cortex.
 
-[1]: https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-analysis.r "crossdata-correlations-micro-exp-analysis.r"
+[1]: https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-adjust-data.r "crossdata-correlations-micro-exp-adjust-data.r"
 [2]: https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-analysis.r "crossdata-correlations-micro-exp-analysis.r"
