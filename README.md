@@ -50,5 +50,5 @@ Output:
 * results/crossdata-micro-exp-correlations-tarbase.rda
 
 #### Generate report
-`Rscript -e 'knitr::knit("crossdata-correlations-meth-exp-report.Rmd")'`
+`Rscript -e 'knitr::knit("crossdata-correlations-micro-exp-report.Rmd")'`
 

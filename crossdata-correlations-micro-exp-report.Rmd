@@ -38,16 +38,20 @@ Explore and visualize correlation results generated between the microRNA and mRN
 ## Methods
 The [analysis][2] was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. mRNA and microRNA expression levels were [adjusted][1] for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis.
 
-microRNA probes were included in this analysis only if the mature microRNA target symbols were present in the mirbase database provided by the `RmiR.hsa` package. This database was used to putative targets for each microRNA. Correlations were calculated between each microRNA and all putative targets listed in the mirbase database, overlap was determined using Entrez IDs. 
-
-Correlations were calculated using the standard `cor` function and with use set to `"pairwise.complete"`. P-values were obtained using the `WGCNA` package's `corPvalueStudent` function and multiple testing corrections were performed using the Benjamini & Hochberg method for generating q-values.
+Predicted microRNA/mRNA interactions were obtained using the various databases provided by the `RmiR.hsa` package. Correlations were calculated using the standard `cor` function and with use set to `"pairwise.complete"`. P-values were obtained using the `WGCNA` package's `corPvalueStudent` function and multiple testing corrections were performed using the Benjamini & Hochberg method for generating q-values.
 
 
 ## Results
+Correlation results are provided independently for each microRNA/mRNA target prediction database. 
 
 ```{r generate-report, include=FALSE}
+
+# Identify files correlation results from each RmiR.hsa database
+mirdbs <- list.files("results", pattern = "crossdata-micro-exp-correlations")
+mirdbs <- gsub(".*-(\\w+)\\.rda$", "\\1", mirdbs)
+
 report <- knit_template("templates/crossdata-correlations-micro-exp-report.tpl",
-  labels = "mirbase", variable = "mirdb")
+  labels = mirdbs, variable = "mirdb")
 ```
 
 ```{r print-report, include=TRUE, results='asis'}
