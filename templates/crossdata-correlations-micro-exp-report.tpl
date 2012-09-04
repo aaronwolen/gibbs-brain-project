@@ -8,6 +8,7 @@ load("results/crossdata-micro-exp-correlations-<% mirdb %>.rda")
 
 # Annotate probes
 cors.df <- data.frame(cors.df,
+  fData(eset.exp)[cors.df$exp, c("symbol", "entrez")],
   fData(eset.micro)[cors.df$micro, c("chr", "position", "strand")],
   row.names = NULL)
   
@@ -93,7 +94,7 @@ ggplot(data.frame(sig.cors,
 #### Scatter plots
 Scatter plots for the 50 most significant microRNA/mRNA correlations are provided [here](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/crossdata-correlations-micro-exp/<% mirdb %>-cors-micro-exp-top-probes.pdf).
 
-```{r <% mirdb %>-sig-probes-scatterplots, include=FALSE, eval=FALSE}
+```{r <% mirdb %>-sig-probes-scatterplots, include=FALSE}
 # Produce visualizations for individual probes with largest correlations
 nplots <- ifelse(nrow(sig.cors) > 50, 50, nrow(sig.cors))
 
@@ -149,7 +150,7 @@ while(length(probe.plots) < nplots) {
       " cor = ", round(sig.cors$r[i], 2), ")", sep = ""))
 }
 
-pdf(file.path(fig.dir, paste(fig.prefix, "top-probes-<% mirdb %>.pdf", sep = "")),
+pdf(file.path(fig.dir, paste(fig.prefix, "<% mirdb %>-top-probes.pdf", sep = "")),
     width = 7, height = 6)
 temp <- lapply(probe.plots, print)
 dev.off()
