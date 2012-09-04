@@ -31,11 +31,12 @@ load("data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda")
 
 Explore and visualize correlation results generated between the microRNA and mRNA expression data based on various target prediction resources.
 
-* script: [`crossdata-correlations-micro-exp-analysis.r`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-analysis.r)
+* data adjustment: [`crossdata-correlations-micro-exp-adjust-data.r`][1]
+* correlation analysis: [`crossdata-correlations-micro-exp-analysis.r`][2]
 
 
 ## Methods
-The analysis was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. mRNA and microRNA expression levels were adjusted for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis.
+The [analysis][2] was performed independently for each tissue. Subsets of the expression and methylation eSet objects were created to include only samples from individuals present in both datasets. mRNA and microRNA expression levels were [adjusted][1] for age and sample tissue bank by fitting a linear model with these variables and using the residuals in the correlation analysis.
 
 microRNA probes were included in this analysis only if the mature microRNA target symbols were present in the mirbase database provided by the `RmiR.hsa` package. This database was used to putative targets for each microRNA. Correlations were calculated between each microRNA and all putative targets listed in the mirbase database, overlap was determined using Entrez IDs. 
 
@@ -58,3 +59,5 @@ cat(report, "\n")
 ### Outlier exclusion
 The original analysis was run using mirbase predictions and included all samples for which microRNA and mRNA expression data was available. The original results can be obtained from commit [468768aa9d](https://github.com/aaronwolen/gibbs-brain-project/commit/468768aa9d). The analysis was then re-run removing samples that showed extreme deviations from a median-generated reference sample (see results from the QC analyses for more information). Without these outliers, the [updated results](https://github.com/aaronwolen/gibbs-brain-project/commit/e404d0a) contained ~2,000 fewer correlations in the cerebellum with a q-value < 0.05. However, at the same level of significance, there were ~2,000 more in pons, ~3,000 more in temporal cortex and ~4,000 more in the frontal cortex.
 
+[1]: https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-analysis.r "crossdata-correlations-micro-exp-analysis.r"
+[2]: https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-analysis.r "crossdata-correlations-micro-exp-analysis.r"
