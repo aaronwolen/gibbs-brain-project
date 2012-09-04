@@ -1,138 +1,80 @@
-# For each microRNA calculate correlations with all genes annotated as putative
-# targets by mirBase. This script should be batch processed and 'tissue' should
-# be supplied as a command line argument equal to CRBLM, PONS, FCTX or TCTX.
+# Within each tissue, calculate correlations between each microRNA and its
+# putative, based on various target prediction databases.
 ###########################################################################
 
 library(Biobase)
 library(RmiR.hsa)
 library(org.Hs.eg.db)
+source("functions/cor_cross_eset.r")
+options(stringsAsFactors = FALSE)
 
-library(foreach)
-library(doMC)
-
-
-# Read in command line arguments ------------------------------------------
-args <- commandArgs(trailingOnly = TRUE)
-
-# Evaluate the expressions containing each argument
-if(length(args) == 0){
-  stop("tissue argument not supplied.")
-} else {
-  for(i in seq_along(args)){
-    eval(parse(text = args[[i]]))
-  }
-}
-
-tissue <- match.arg(tissue, c("PONS", "CRBLM", "FCTX", "TCTX"))
-
-# Register multicore backend ----------------------------------------------
-n.cores <- multicore:::detectCores()
-registerDoMC(n.cores)
-
+source("functions/eval-args.r")
 
 # Load adjusted data ------------------------------------------------------
 load("data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda")
 load("data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda")
 
 
-# Identify  miroRNA targets -----------------------------------------------
+# Create look-up table for microRNAs and their targets --------------------
 
-# Extract mirbase database
-mirbase <- dbGetQuery(RmiR.hsa_dbconn(), 
-  "SELECT * FROM mirbase where mature_miRNA like '%'")
-
-# Identify microRNA ID's in eSet and mirbase
-mirs <- intersect(fData(eset.micro)$symbol, mirbase$mature_miRNA)
-
-mirbase <- subset(mirbase, mature_miRNA %in% mirs)
-
-# Add gene symbols
-mirbase$symbol <- unlist(mget(mirbase$gene_id, org.Hs.egSYMBOL, ifnotfound=NA))
-
-# Identify microRNA targets and exp probes with common entrez IDs 
-entrezs <- intersect(fData(eset.exp)$entrez, mirbase$gene_id)
-
-
-# Subset ExpressionSets by probes -----------------------------------------
-
-# Identify probes corresponding to the microRNA and putative targets
-micro.probes <- subset(fData(eset.micro), symbol %in% mirs)$id
-exp.probes <- subset(fData(eset.exp), entrez %in% entrezs)$id
-
-eset.micro <- eset.micro[micro.probes, ]
-eset.exp <- eset.exp[exp.probes, ]
-
-# Subset ExpressionSets ---------------------------------------------------
-
-# Identify individuals present in both datasets
-common.ids <- intersect(eset.exp[, eset.exp$tissue == tissue]$individual,
-  eset.micro[, eset.micro$tissue == tissue]$individual)
-
-cat(length(common.ids), "individual IDs present in both datasets.\n")
-
-# Region-specific eSet objects
-exp.sub <- eset.exp[, eset.exp$individual %in% common.ids & 
-                      eset.exp$tissue == tissue]
-
-micro.sub <- eset.micro[, eset.micro$individual %in% common.ids &
-                      eset.micro$tissue == tissue]
-
-# Swap geo ids for individual ids
-sampleNames(exp.sub) <- exp.sub$individual
-sampleNames(micro.sub) <- micro.sub$individual
-
-# Reorder second dataset to match first
-micro.sub <- micro.sub[, sampleNames(exp.sub)]
-stopifnot(all(sampleNames(exp.sub) == sampleNames(micro.sub)))
-
-
-# Extract expression matrices ---------------------------------------------
-exp.mat <- t(exprs(exp.sub))
-micro.mat <- t(exprs(micro.sub))
-
-
-# Correlate expression/methylation residuals ------------------------------
-
-cors.df <- foreach(m = mirs, .combine = "rbind") %dopar% {
-
-  # MicroRNA probe
-  mp <- subset(fData(eset.micro), symbol == m)$id
-  
-  # Putative targets of m
-  m.genes <- subset(mirbase, mature_miRNA == m)$gene_id
-  
-  # Probes for putative targets
-  ep <- subset(fData(exp.sub), entrez %in% m.genes)$id
-  symbols <- subset(fData(exp.sub), entrez %in% m.genes)$symbol
-
-  mp.mat <- matrix(micro.mat[, mp], ncol = 1, 
-    dimnames = list(rownames(micro.mat), mp))
-  
-  out <- cor(mp.mat, exp.mat[, ep], use = "pairwise.complete")
-  
-  if(length(ep) == 1) {
-    out <- data.frame(Var1 = mp, Var2 = ep, Freq = as.numeric(out))
-  } else {
-    out <- as.data.frame.table(out)  
-  }
-  
-  # Count number of values used in each correlation
-  out$n <- apply(as.matrix(out), 1, function(x)
-    sum(!is.na(micro.mat[, x[1]]) & !is.na(exp.mat[, x[2]])))
-  
-  data.frame(mir = m, symbol = symbols, out)
+if( !exists("mirdb") ) {
+  mirdb <- "tarbase"
 }
 
-# Rename and reoder
-names(cors.df) <- c("microrna", "symbol", "micro", "exp", "r", "n")
-cors.df <- cors.df[, c("microrna", "symbol", "micro", "exp", "n", "r")]
+# Check validity of mirdb
+mirdb <- match.arg(mirdb, dbListTables(RmiR.hsa_dbconn()))
 
-# Calculate p-values
-cors.df$pvalue <- WGCNA::corPvalueStudent(cors.df$r, cors.df$n)
+cat("Performing correlations between microRNAs and targets predicted by", 
+  mirdb, "\n")
 
-# Calculate q-values
-cors.df$qvalue <- p.adjust(cors.df$pvalue, method = "BH")
+# Extract mirdb database table
+mir.key <- dbGetQuery(RmiR.hsa_dbconn(), 
+  paste("SELECT * FROM", mirdb, "where mature_miRNA like '%'"))
+mir.key$gene_id <- as.character(mir.key$gene_id)
+mir.key <- subset(mir.key, select = c(mature_miRNA, gene_id))
 
-write.csv(cors.df, file = file.path("results",
-  paste("crossdata-micro-exp-correlations-", tolower(tissue), 
-  ".csv", sep = "")), row.names = FALSE)
+# Add microRNA probes
+mir.key <- merge(mir.key, fData(eset.micro)[, c("id", "symbol")],
+  by.x = "mature_miRNA", by.y = "symbol", sort = FALSE)
+names(mir.key)[ncol(mir.key)] <- "micro"
+
+# Add mRNA probes based on entrez mappings
+mir.key <- merge(mir.key, fData(eset.exp)[, c("id", "entrez")],
+  by.x = "gene_id", by.y = "entrez", sort = FALSE)
+names(mir.key)[ncol(mir.key)] <- "exp"
+
+mir.key <- subset(mir.key, select = -gene_id)
+names(mir.key)[1] <- "microrna"
+
+# Correlate microRNA/mRNA residuals for each tissue -----------------------
+
+cors.df <- list()
+
+for(t in levels(eset.micro$tissue)) {
+  
+  # Tissue-specific eSet objects
+  micro.sub <- eset.micro[, eset.micro$tissue == t]
+  exp.sub <- eset.exp[, eset.exp$tissue == t]
+  
+  # Swap geo ids for individual ids
+  sampleNames(micro.sub) <- as.character(micro.sub$individual)
+  sampleNames(exp.sub) <- as.character(exp.sub$individual)
+  
+  # Identify individuals present in both datasets
+  common.ids <- intersect(sampleNames(micro.sub), sampleNames(exp.sub))
+  
+  micro.sub <- micro.sub[, common.ids]  
+  exp.sub <- exp.sub[, common.ids]
+  
+  cors.df[[t]] <- cor_cross_eset(micro.sub, exp.sub, mir.key)
+}
+
+# Combine results
+cors.df <- reshape2::melt(cors.df, id.vars = colnames(cors.df[[1]]))
+cors.df <- cbind(tissue = cors.df$L1, subset(cors.df, select = -L1))
+
+
+# Export results ----------------------------------------------------------
+save(list = "cors.df", file = file.path("results",
+  paste("crossdata-micro-exp-correlations-", mirdb, ".rda", sep = "")))
+

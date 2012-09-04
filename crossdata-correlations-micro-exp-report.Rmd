@@ -1,53 +1,16 @@
-# Correlation between microRNAs and their putative targets
+# Correlations between microRNAs and mRNA predicted targets
 
-```{r calculate-correlations, eval=FALSE, include=FALSE}
-  
-# Calculate microRNAs/expression correlations for each tissue. 
-tissues <- c("CRBLM", "FCTX", "TCTX", "PONS")
-
-dir.create("log")
-
-for(t in tissues) {
-  system(paste("R CMD BATCH --no-save --no-restore",
-    shQuote(paste("--args tissue=", shQuote(t), sep = "")),
-    "crossdata-correlations-micro-exp-analysis.r",
-    file.path("log", paste("crossdata-correlations-micro-exp", 
-      tolower(t), "output.r", sep = "-"))))
-}
-
-# Combine results into a single data.frame
-cors.df <- sapply(tissues, simplify = FALSE, function(x)
-  read.csv(paste("results/crossdata-micro-exp-correlations-", 
-    tolower(x), ".csv", sep = "")))
-
-cors.df <- reshape2::melt(cors.df, id.vars = colnames(cors.df[[1]]))
-cors.df <- cbind(tissue = cors.df$L1, subset(cors.df, select = -L1))
-
-# Remove individual results
-file.remove(dir("results", pattern = "crossdata-micro-exp-correlations", 
-  full.names = TRUE))
-
-# Export combined results as compressed rda file
-save(cors.df, file = "results/crossdata-micro-exp-correlations.rda")
-```
-
-```{r setup, include=FALSE}
-# source("functions/knit_wiki.r")
-# knit_wiki("crossdata-correlations-micro-exp-report.Rmd", output.filename = "Correlations between microRNA and mRNA expression data")
-
+```{r knitr-setup, include=FALSE}
 report.title <- "crossdata-correlations-micro-exp"
-fig.dir <- file.path("figures", report.title)
+fig.path <- file.path("figures", report.title)
 fig.prefix <- "cors-micro-exp-"
 
-dir.create(fig.dir, showWarnings = FALSE)
+dir.create(fig.path, showWarnings = FALSE)
 
-opts_knit$set(upload.fun = function(file, 
-  key = "ec071b3a0c69857c0db26a477c1a568c") imgur_upload(file, key))
-
-opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
+opts_chunk$set(fig.path = file.path(fig.path, fig.prefix),
   cache.path = paste(".cache-", report.title, "/", sep = ""),
   echo=FALSE, results = 'hide',
-  cache=FALSE, autodep=TRUE, fig.width=5, fig.height=4, dpi=150)
+  cache=FALSE, fig.width=5, fig.height=4, dpi=150)
 ```
 
 ```{r load-libraries, cache=FALSE, message=FALSE}
@@ -56,6 +19,7 @@ library(grid)
 library(plyr)
 library(ggplot2)
  
+source("functions/knit_template.r")
 source("functions/print_xtable.r")
 source("functions/save-figures.r")
 ```
@@ -63,19 +27,11 @@ source("functions/save-figures.r")
 ```{r load-data, cache=FALSE, message=FALSE}
 load("data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda")
 load("data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda")
-
-load("results/crossdata-micro-exp-correlations.rda")
-
-# Annotate probes
-cors.df <- data.frame(cors.df,
-  fData(eset.micro)[cors.df$micro, c("chr", "position", "strand")],
-  row.names = NULL)
 ```
 
-Explore and visualize correlation results generated between the microRNA and mRNA expression data.
+Explore and visualize correlation results generated between the microRNA and mRNA expression data based on various target prediction resources.
 
 * script: [`crossdata-correlations-micro-exp-analysis.r`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-analysis.r)
-* results: [`crossdata-micro-exp-correlations.csv`](https://github.com/aaronwolen/gibbs-brain-project/blob/master/results/crossdata-micro-exp-correlations.csv)
 
 
 ## Methods
@@ -88,137 +44,15 @@ Correlations were calculated using the standard `cor` function and with use set 
 ### Outlier exclusion
 This analysis was re-run after removing samples from the microRNA and mRNA expression data that showed extreme deviations from a median-generated reference sample. Without these outliers, there were ~2,000 fewer correlations in the cerebellum with a q-value < 0.05. However, at the same level of significance, there were ~2,000 more in pons, ~3,000 more in temporal cortex and ~4,000 more in the frontal cortex. The original results can be obtained from commit [468768aa9d](https://github.com/aaronwolen/gibbs-brain-project/commit/468768aa9d8db8608885b6bcd3522a8814c3c788#results/crossdata-micro-exp-correlations.rda). 
 
+
 ## Results
 
-```{r results-table, results='asis'}
-results.table <- ddply(cors.df, .(tissue), summarise, 
-  'p-value < 0.05' = sum(pvalue < 0.05),
-  'q-value < 0.05' = sum(qvalue < 0.05))
-
-print_xtable(results.table)
+```{r generate-report, include=FALSE}
+report <- knit_template("templates/crossdata-correlations-micro-exp-report.tpl",
+  labels = "mirbase", variable = "mirdb")
 ```
 
-### Histograms
-Histograms of the Pearson correlation values (left) and corresponding p-values (right).
-
-```{r histograms, message=FALSE}
-p.hist <- ggplot(cors.df) + 
-  aes(x = pvalue) + geom_histogram() +
-  facet_grid(tissue~.)
-
-r.hist <- ggplot(cors.df) + 
-  aes(x = r) + geom_histogram() +
-  geom_vline(xintercept = 0, color = "white") +
-  facet_grid(tissue~.)
-
-ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(r.hist, p.hist))
-```
-
-
-### Frequency of significant microRNA correleations
-A subset of microRNAs are correlated with very large lists of genes. The following figure summarizes the number of significant correlations associated with individual microRNAs. The tables below provide for each tissue the ten microRNAs associated with the largest number of significant correlations. 
-
-```{r count-correlations, fig.width=5, fig.height=3}
-sig.cors <- subset(cors.df, qvalue < .05)
-sig.cors <- arrange(sig.cors, qvalue)
-
-mir.counts <- with(sig.cors, tapply(microrna, tissue, table))
-mir.counts <- lapply(mir.counts, as.data.frame.table)
-mir.counts <- reshape2::melt(mir.counts, id.vars = c("Var1", "Freq"))
-names(mir.counts) <- c("microrna", "count", "tissue")
-mir.counts <- arrange(mir.counts, tissue, desc(count))
-
-ggplot(mir.counts) + aes(x = tissue, y = count) + geom_boxplot() +
-  ylab("microRNA correlations count (q-value < 0.05)")
-```
-
-
-```{r count-correlations-tables, results='asis'}
-tissues <- c("CRBLM" = "Cerebellum", "FCTX" = "Frontal cortex", 
-   "TCTX" = "Temporal cortex", "PONS" = "Pons")
-
-for(t in seq_along(tissues)) {
-  cat("\n####", tissues[t], "\n")
-  cur.t <- names(tissues)[t]
-  print_xtable(subset(mir.counts, tissue == cur.t, select = -tissue)[1:10,])
-}
-```
-
-
-### Positive vs negative correlations
-In all tissues the number of positive correlations exceeded that of negative correlations. 
-
-```{r count-correlations-direction, fig.width=5, fig.height=3}
-
-ggplot(data.frame(sig.cors, 
-  dir = ifelse(sig.cors$r > 0, "positive", "negative"))) + 
-  geom_bar(aes(x = tissue, fill = dir), position = position_dodge()) +
-  ylab("Correlation count (q-value < 0.05)") + 
-  guides(fill = guide_legend(title = "correlation\ndirection"))
-```
-
-
-### Scatter plots
-Scatter plots for the 50 most significant microRNA/mRNA correlations are provided [here](https://github.com/aaronwolen/gibbs-brain-project/blob/master/figures/crossdata-correlations-micro-exp/cors-micro-exp-top-probes.pdf).
-
-```{r sig-probes-scatterplots, include=FALSE}
-# Produce visualizations for individual probes with largest correlations
-
-# Phenotype data for plots
-pdata.cols <- c("geo", "individual", "gender")
-pdata <- rbind(pData(eset.exp)[, pdata.cols], pData(eset.micro)[, pdata.cols])
-
-# Vector of microRNA/mRNA probe ids
-sig.cors$id <- with(sig.cors, paste(exp, micro, sep = "-"))
-
-probe.plots <- list(); i <- 0
-
-while(length(probe.plots) < 50) {  
-  
-  i <- i + 1
-  cur.id  <- sig.cors$id[i]
-  
-  # Skip current correlation is its been previously plotted
-  if(cur.id %in% names(probe.plots)) {
-    next()
-  }
-  
-  m.probe <- as.character(sig.cors$micro[i])
-  e.probe <- as.character(sig.cors$exp[i])
-
-  probe.df <- data.frame(sample = sampleNames(eset.exp),
-    tissue = eset.exp$tissue,
-    expression = exprs(eset.exp)[e.probe,], assay = "mRNA", 
-    row.names = NULL)
-  
-  probe.df <- rbind(probe.df,
-    data.frame(sample = sampleNames(eset.micro),
-      tissue = eset.micro$tissue,
-      expression = exprs(eset.micro)[m.probe,], assay = "microRNA",
-      row.names = NULL))
-   
-  probe.df <- merge(probe.df, pdata, by.x = "sample", by.y = "geo") 
-    
-  probe.df <- reshape2::dcast(probe.df, 
-    individual + gender + tissue ~ assay, value.var = "expression")
-  
-  probe.plots[[cur.id]] <- ggplot(probe.df) +
-    aes(x = microRNA, y = mRNA) +
-    geom_point(aes(color = gender), alpha = 0.5) +
-    geom_text(aes(label = individual), color = "white", size = 0.5) +
-    geom_rug(alpha = 0.5) +
-    facet_wrap(~tissue, ncol = 2)  +
-    stat_smooth(method = "lm") +
-    xlab(paste("microRNA expression", " (", m.probe, ")", sep = "")) +
-    ylab(paste("mRNA expression", " (",  e.probe, ")", sep = "")) +
-    opts(title = paste(sig.cors$symbol[i], "/", sig.cors$microrna[i], 
-      " (", tolower(sig.cors$tissue[i]), 
-      " cor = ", round(sig.cors$r[i], 2), ")", sep = ""))
-}
-
-pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
-    width = 7, height = 6)
-temp <- lapply(probe.plots, print)
-dev.off()
+```{r print-report, include=TRUE, results='asis'}
+cat(report, "\n")
 ```
 

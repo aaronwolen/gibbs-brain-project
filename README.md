@@ -34,3 +34,21 @@ Output:
 #### Generate report
 `Rscript -e 'knitr::knit("crossdata-correlations-meth-exp-report.Rmd")'`
 
+### microRNA and mRNA correlations
+
+#### Adjust microRNA and expression data for age and tissue bank
+`Rscript crossdata-correlations-micro-exp-adjust-data.r`
+
+Output:
+* data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda
+* data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda
+
+#### Calculate microRNA/expression correlations
+`Rscript crossdata-correlations-micro-exp-analysis.r "mirdb='tarbase'"`
+
+Output:
+* results/crossdata-micro-exp-correlations-tarbase.rda
+
+#### Generate report
+`Rscript -e 'knitr::knit("crossdata-correlations-meth-exp-report.Rmd")'`
+
