@@ -41,9 +41,6 @@ microRNA probes were included in this analysis only if the mature microRNA targe
 
 Correlations were calculated using the standard `cor` function and with use set to `"pairwise.complete"`. P-values were obtained using the `WGCNA` package's `corPvalueStudent` function and multiple testing corrections were performed using the Benjamini & Hochberg method for generating q-values.
 
-### Outlier exclusion
-This analysis was re-run after removing samples from the microRNA and mRNA expression data that showed extreme deviations from a median-generated reference sample. Without these outliers, there were ~2,000 fewer correlations in the cerebellum with a q-value < 0.05. However, at the same level of significance, there were ~2,000 more in pons, ~3,000 more in temporal cortex and ~4,000 more in the frontal cortex. The original results can be obtained from commit [468768aa9d](https://github.com/aaronwolen/gibbs-brain-project/commit/468768aa9d8db8608885b6bcd3522a8814c3c788#results/crossdata-micro-exp-correlations.rda). 
-
 
 ## Results
 
@@ -55,4 +52,9 @@ report <- knit_template("templates/crossdata-correlations-micro-exp-report.tpl",
 ```{r print-report, include=TRUE, results='asis'}
 cat(report, "\n")
 ```
+
+## Summary 
+
+### Outlier exclusion
+The original analysis was run using mirbase predictions and included all samples for which microRNA and mRNA expression data was available. The original results can be obtained from commit [468768aa9d](https://github.com/aaronwolen/gibbs-brain-project/commit/468768aa9d). The analysis was then re-run removing samples that showed extreme deviations from a median-generated reference sample (see results from the QC analyses for more information). Without these outliers, the [updated results](https://github.com/aaronwolen/gibbs-brain-project/commit/e404d0a) contained ~2,000 fewer correlations in the cerebellum with a q-value < 0.05. However, at the same level of significance, there were ~2,000 more in pons, ~3,000 more in temporal cortex and ~4,000 more in the frontal cortex.
 
