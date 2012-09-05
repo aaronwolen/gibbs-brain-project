@@ -41,7 +41,7 @@ ggaffy:::ggaffy_layout(nrow = 1, ncol = 2, plot.list = list(r.hist, p.hist))
 #### Frequency of significant microRNA correleations
 Boxplot showing the number of significant mRNA correlations associated with each microRNA. The tables below provide for each tissue the ten microRNAs associated with the largest number of significant correlations.
 
-```{r <% mirdb %>-count-correlations, fig.width=5, fig.height=3}
+```{r <% mirdb %>-count-correlations}
 sig.cors <- subset(cors.df, adj.pvalue < .05)
 sig.cors$tissue <- factor(sig.cors$tissue)
 sig.cors <- arrange(sig.cors, adj.pvalue)
@@ -79,12 +79,13 @@ for(t in unique(mir.counts$tissue)) {
 
 #### Positive vs negative correlations
 
-```{r <% mirdb %>-count-correlations-direction, fig.width=5, fig.height=3}
+```{r <% mirdb %>-count-correlations-direction}
 ggplot(data.frame(sig.cors, 
   dir = ifelse(sig.cors$r > 0, "positive", "negative"))) + 
   geom_bar(aes(x = tissue, fill = dir), position = position_dodge()) +
   ylab("Correlation count (q-value < 0.05)") + 
-  guides(fill = guide_legend(title = "correlation\ndirection"))
+  guides(fill = guide_legend(title = "correlation\ndirection")) +
+  opts(legend.position = "top")
 ```
 
 #### Scatter plots
