@@ -146,7 +146,7 @@ while(length(probe.plots) < nplots) {
       " cor = ", round(sig.cors$r[i], 2), ")", sep = ""))
 }
 
-pdf(file.path(fig.dir, paste(fig.prefix, "<% mirdb %>-top-probes.pdf", sep = "")),
+pdf(file.path(fig.path, paste(fig.prefix, "<% mirdb %>-top-probes.pdf", sep = "")),
     width = 7, height = 6)
 temp <- lapply(probe.plots, print)
 dev.off()
