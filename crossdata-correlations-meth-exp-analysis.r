@@ -3,13 +3,33 @@
 ###########################################################################
 
 library(Biobase)
+source("functions/adust_eset.r")
 source("functions/cor_cross_eset.r")
 options(stringsAsFactors = FALSE)
 
 
+# Adjust data for covariates ----------------------------------------------
+
+meth.file <- "data/crossdata-correlations-meth-exp/eset-meth-adjusted.rda"
+exp.file <- "data/crossdata-correlations-meth-exp/eset-exp-adjusted.rda"
+
+
+# methylation data
+if( !file.exists(meth.file) ) {
+  source("4b-load-meth-data.r")
+  adjust_eset(eset.meth, ~ age + tissuebank, output = meth.file)
+}
+
+# mRNA data
+if( !file.exists(exp.file) ) {
+  source("4a-load-exp-data.r")
+  adjust_eset(eset.exp, ~ age + tissuebank, output = exp.file)
+}
+
+
 # Load adjusted data ------------------------------------------------------
-load("data/crossdata-correlations-meth-exp/eset-exp-adjusted.rda")
-load("data/crossdata-correlations-meth-exp/eset-meth-adjusted.rda")
+load(meth.file)
+load(exp.file)
 
 
 # Construct cross-platform probe look-up table ----------------------------

@@ -3,9 +3,21 @@
 
 library(Biobase)
 library(reshape2)
+source("functions/adust_eset.r")
+
+
+# Adjust data for covariates ----------------------------------------------
+
+meth.file <- "data/crosstissue-correlations-meth/eset-meth-adjusted.rda"
+
+if( !file.exists(meth.file) ) {
+  source("4b-load-meth-data.r")
+  adjust_eset(eset.meth, ~ age + tissuebank, output = meth.file)
+}
+
 
 # Load adjusted data ------------------------------------------------------
-load("data/crosstissue-correlations-meth/eset-meth-adjusted.rda")
+load(meth.file)
 
 
 # Remove sex chromosomes --------------------------------------------------

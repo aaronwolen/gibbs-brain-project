@@ -5,14 +5,35 @@
 library(Biobase)
 library(RmiR.hsa)
 library(org.Hs.eg.db)
+source("functions/adust_eset.r")
 source("functions/cor_cross_eset.r")
 options(stringsAsFactors = FALSE)
 
 source("functions/eval-args.r")
 
+
+# Adjust data for covariates ----------------------------------------------
+
+micro.file <- "data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda"
+exp.file <- "data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda"
+
+# microRNA data
+if( !file.exists(micro.file) ) {
+  source("4c-load-micro-data.r")
+  adjust_eset(eset.micro, ~ age + tissuebank, output = micro.file)
+}
+
+# mRNA data
+if( !file.exists(exp.file) ) {
+  source("4a-load-exp-data.r")
+  adjust_eset(eset.exp, ~ age + tissuebank, output = exp.file)
+}
+
+
+
 # Load adjusted data ------------------------------------------------------
-load("data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda")
-load("data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda")
+load(exp.file)
+load(micro.file)
 
 
 # Create look-up table for microRNAs and their targets --------------------
