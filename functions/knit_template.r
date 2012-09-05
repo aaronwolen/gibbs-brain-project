@@ -10,10 +10,9 @@ knit_template <- function(file, variable = "variable", labels) {
   # Set knitr to read brew syntax
   pat_brew()
   knit_hooks$set(inline = identity)
-  
-  src <- NULL
     
   # Process template file for each level of supplied labels
+  src <- NULL
   for(i in labels) {
     assign(variable, i)
     src <- c(src, knit(text = readLines(file)))
@@ -22,7 +21,6 @@ knit_template <- function(file, variable = "variable", labels) {
   # Switch back to markdown syntax
   pat_md()
   render_markdown()
-  
   out <- knit(text = src)
   
   return(out)

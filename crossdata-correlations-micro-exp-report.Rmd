@@ -7,10 +7,9 @@ fig.prefix <- "cors-micro-exp-"
 
 dir.create(fig.path, showWarnings = FALSE)
 
-opts_chunk$set(fig.path = file.path(fig.path, fig.prefix),
-  cache.path = paste(".cache-", report.title, "/", sep = ""),
+opts_chunk$set(dev='jpeg', fig.path = file.path(fig.path, fig.prefix),
   echo=FALSE, results = 'hide',
-  cache=FALSE, fig.width=5, fig.height=4, dpi=150)
+  cache=FALSE, fig.width=3, fig.height=3, dpi=150)
 ```
 
 ```{r load-libraries, cache=FALSE, message=FALSE}
@@ -24,7 +23,7 @@ source("functions/print_xtable.r")
 source("functions/save-figures.r")
 ```
 
-```{r load-data, cache=FALSE, message=FALSE}
+```{r load-data, cache=FALSE}
 load("data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda")
 load("data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda")
 ```
@@ -45,7 +44,6 @@ Predicted microRNA/mRNA interactions were obtained using the various databases p
 Correlation results are provided independently for each microRNA/mRNA target prediction database. 
 
 ```{r generate-report, include=FALSE}
-
 # Identify files correlation results from each RmiR.hsa database
 mirdbs <- list.files("results", pattern = "crossdata-micro-exp-correlations")
 mirdbs <- gsub(".*-(\\w+)\\.rda$", "\\1", mirdbs)
@@ -54,7 +52,7 @@ report <- knit_template("templates/crossdata-correlations-micro-exp-report.tpl",
   labels = mirdbs, variable = "mirdb")
 ```
 
-```{r print-report, include=TRUE, results='asis'}
+```{r print-report, results='asis', message=FALSE}
 cat(report, "\n")
 ```
 
@@ -65,3 +63,9 @@ The original analysis was run using mirbase predictions and included all samples
 
 [1]: https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-adjust-data.r "crossdata-correlations-micro-exp-adjust-data.r"
 [2]: https://github.com/aaronwolen/gibbs-brain-project/blob/master/crossdata-correlations-micro-exp-analysis.r "crossdata-correlations-micro-exp-analysis.r"
+
+### Directionality
+In all tissues the number of positive correlations exceeded that of negative correlations.
+
+### Correlation frequency
+As shown in the boxplots, there is a subset of microRNAs that are correlated with very large lists of genes.
