@@ -11,10 +11,7 @@ cors.df <- data.frame(cors.df,
   fData(eset.exp)[cors.df$exp, c("symbol", "entrez")],
   fData(eset.micro)[cors.df$micro, c("chr", "position", "strand")],
   row.names = NULL)
-  
-print(head(cors.df))
 ```
-
 
 ```{r <% mirdb %>-results-table, results='asis'}
 results.table <- ddply(cors.df, .(tissue), summarise, 
@@ -27,7 +24,7 @@ print_xtable(results.table)
 #### Correlation and p-value distributions
 Histograms of the Pearson correlation values (left) and corresponding p-values (right).
 
-```{r <% mirdb %>-histograms, message=FALSE}
+```{r <% mirdb %>-histograms, message=FALSE, fig.width=5, fig.height=4}
 p.hist <- ggplot(cors.df) + 
   aes(x = pvalue) + geom_histogram() +
   facet_grid(tissue~.)
