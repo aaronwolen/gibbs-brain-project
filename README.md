@@ -12,20 +12,14 @@ The paper points to the following dbGAP page but authorization must be obtained 
 
 dbGAP: [phs000249.v1.p](http://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs000249.v1.p1)
 
-## Downloading the data
+## Downloading and cleaning the data
+*Coming soon...*
 
 ## Running the analyses
 
 ### Methylation and mRNA correlations
 
-#### Adjust methylation and expression data for age and tissue bank
-`Rscript crossdata-correlations-meth-exp-adjust-data.r`
-
-Output:
-* data/crossdata-correlations-meth-exp/eset-meth-adjusted.rda
-* data/crossdata-correlations-meth-exp/eset-exp-adjusted.rda
-
-#### Calculate methylation/expression correlations
+#### Run analysis
 `Rscript crossdata-correlations-meth-exp-analysis.r`
 
 Output:
@@ -34,16 +28,20 @@ Output:
 #### Generate report
 `Rscript -e 'knitr::knit("crossdata-correlations-meth-exp-report.Rmd")'`
 
+
 ### microRNA and mRNA correlations
+Correlations are calculated between microRNAs and the mRNAs they putatively target.  
+Predicted microRNA/mRNA interactions are provided by the [`RmiR.hsa`](http://www.bioconductor.org/packages/2.10/data/annotation/html/RmiR.hsa.html) package, which includes prediction results from 7 different databases: 
+* miranda
+* mirbase
+* mirtarget2
+* pictar
+* tarbase
+* targetscan
 
-#### Adjust microRNA and expression data for age and tissue bank
-`Rscript crossdata-correlations-micro-exp-adjust-data.r`
+The cross-data correlations can be calculated based on the predictions from any of these databases by setting `mirdb` when running the script.
 
-Output:
-* data/crossdata-correlations-micro-exp/eset-micro-adjusted.rda
-* data/crossdata-correlations-micro-exp/eset-exp-adjusted.rda
-
-#### Calculate microRNA/expression correlations
+#### Run analysis
 `Rscript crossdata-correlations-micro-exp-analysis.r "mirdb='tarbase'"`
 
 Output:
