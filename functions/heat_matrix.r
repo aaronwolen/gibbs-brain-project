@@ -27,7 +27,7 @@ heat_matrix <- function(mat, tile.labels = TRUE, symmetric = FALSE,
     p <- p + 
       geom_text(data = df[diag.rows, ], 
         aes(label = Var1), color = "white", size = font.size) +
-      opts(axis.text.x = theme_blank(), axis.text.y = theme_blank())
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank())
   }
   
   if(tile.labels) {
@@ -36,9 +36,9 @@ heat_matrix <- function(mat, tile.labels = TRUE, symmetric = FALSE,
         aes(label = round(Freq, d = 2)), color = "white", size = font.size)
   }
   
-  p <- p + opts(axis.title.x = theme_blank(), axis.title.y = theme_blank(),
-    axis.ticks = theme_blank())
-  
+  p <- p + theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
+                 axis.ticks = element_blank())
+
   p <- p + guides(fill = guide_colorbar(title = legend.title))
   
   return(p)

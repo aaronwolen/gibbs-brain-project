@@ -145,7 +145,7 @@ for(p in probes) {
   stat_smooth(method = "lm") +
   xlab(paste("CpG methylation (", p, ")", sep = "")) +
   ylab(paste("CpG methylation (", p, ")", sep = "")) +
-  opts(title = p.title) + coord_fixed()
+  ggtitle(p.title) + coord_fixed()
 }
 
 pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
