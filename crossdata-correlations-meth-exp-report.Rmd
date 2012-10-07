@@ -17,6 +17,7 @@ opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
 ```
 
 ```{r load-libraries}
+library(Biobase)
 library(grid)
 library(plyr)
 library(ggplot2)
