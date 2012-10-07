@@ -16,7 +16,7 @@ opts_chunk$set(fig.path = file.path(fig.dir, fig.prefix),
   cache=FALSE, fig.width=5, fig.height=4, dpi=150)
 ```
 
-```{r load-libraries}
+```{r load-libraries, message=FALSE}
 library(Biobase)
 library(grid)
 library(plyr)
