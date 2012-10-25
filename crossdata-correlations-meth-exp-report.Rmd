@@ -23,6 +23,7 @@ library(plyr)
 library(ggplot2)
  
 source("functions/print_xtable.r")
+source("functions/plot_cross_eset.r")
 source("functions/save-figures.r")
 ```
 
@@ -111,39 +112,21 @@ while(length(probe.plots) < 50) {
   cur.id  <- sig.cors$id[i]
   
   # Skip current correlation is its been previously plotted
-  if(cur.id %in% names(probe.plots)) {
-    next()
-  }
+  if(cur.id %in% names(probe.plots)) next()
   
   m.probe <- as.character(sig.cors$meth[i])
   e.probe <- as.character(sig.cors$exp[i])
-
-  probe.df <- data.frame(sample = sampleNames(eset.exp),
-    tissue = eset.exp$tissue,
-    expression = exprs(eset.exp)[e.probe,], assay = "expression", 
-    row.names = NULL)
   
-  probe.df <- rbind(probe.df,
-    data.frame(sample = sampleNames(eset.meth),
-      tissue = eset.meth$tissue,
-      expression = exprs(eset.meth)[m.probe,], assay = "methylation",
-      row.names = NULL))
-   
-  probe.df <- merge(probe.df, pdata, by.x = "sample", by.y = "geo") 
-    
-  probe.df <- reshape2::dcast(probe.df, 
-    individual + gender + tissue ~ assay, value.var = "expression")
-  
-  probe.plots[[cur.id]] <- ggplot(probe.df) +
-    aes(x = methylation, y = expression) +
-    geom_point(aes(color = gender), alpha = 0.5) +
-    geom_rug(alpha = 0.5) +
-    facet_wrap(~tissue, ncol = 2)  +
-    stat_smooth(method = "lm") +
-    xlab(paste("Methylation", " (", m.probe, ")", sep = "")) +
-    ylab(paste("Expression", " (",  e.probe, ")", sep = "")) +
-    ggtitle(paste(sig.cors$symbol[i], " (", tolower(sig.cors$tissue[i]), 
-      " cor = ", round(sig.cors$r[i], 2), ")", sep = ""))
+  probe.plots[[cur.id]] <- plot_cross_eset(eset.meth, eset.exp, 
+    m.probe, e.probe, id.name = "individual", 
+    mapping = aes(color = gender), facets = ~tissue) +
+  geom_rug(alpha = 0.5) +
+  facet_wrap(~tissue, ncol = 2)  +
+  stat_smooth(method = "lm") +
+  xlab(paste("Methylation", " (", m.probe, ")", sep = "")) +
+  ylab(paste("Expression", " (",  e.probe, ")", sep = "")) +
+  ggtitle(paste(sig.cors$symbol[i], " (", tolower(sig.cors$tissue[i]), 
+    " cor = ", round(sig.cors$r[i], 2), ")", sep = ""))
 }
 
 pdf(file.path(fig.dir, paste(fig.prefix, "top-probes.pdf", sep = "")),
